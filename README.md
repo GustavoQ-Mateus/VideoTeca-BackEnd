@@ -22,7 +22,10 @@ app/
     ├── student.py     # /api/v1/student
     ├── professor.py   # /api/v1/professor
     └── staff.py       # /api/v1/staff  — painel do funcionário
-init.sql               # schema + massa inicial (dev)
+db/
+├── migrations/        # schema versionado (001 base, 002 constraints/índices, 003 anticonflito)
+├── seed/seed_dev.sql  # massa de teste (dev) — senha: videoteca123
+└── DER.md             # diagrama ER + dicionário de dados
 ```
 
 ## Rodar localmente

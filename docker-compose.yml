@@ -7,7 +7,12 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      # Migrations versionadas — o entrypoint roda em ordem alfabética (001, 002, 003).
+      - ./db/migrations/001_init_schema.sql:/docker-entrypoint-initdb.d/001_init_schema.sql:ro
+      - ./db/migrations/002_constraints_indexes.sql:/docker-entrypoint-initdb.d/002_constraints_indexes.sql:ro
+      - ./db/migrations/003_anticonflict.sql:/docker-entrypoint-initdb.d/003_anticonflict.sql:ro
+      # Seed de desenvolvimento (roda por último por ordem do nome)
+      - ./db/seed/seed_dev.sql:/docker-entrypoint-initdb.d/zzz_seed_dev.sql:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U videoteca"]

@@ -1,0 +1,9 @@
+# NUNCA commitar state (contém senha do banco e JWT em texto claro)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+*.tfplan
+override.tf
+override.tf.json

@@ -16,7 +16,7 @@ resource "aws_rds_cluster" "aurora" {
   cluster_identifier      = "${local.name}-aurora"
   engine                  = "aurora-postgresql"
   engine_mode             = "provisioned"
-  engine_version          = "16.4"
+  engine_version          = "16.8"
   database_name           = "videoteca"
   master_username         = "vtadmin"
   master_password         = random_password.db.result
@@ -37,6 +37,17 @@ resource "aws_rds_cluster" "aurora" {
 resource "aws_rds_cluster_instance" "writer" {
   count                = var.enable_runtime ? 1 : 0
   identifier           = "${local.name}-aurora-writer"
+  cluster_identifier   = aws_rds_cluster.aurora[0].id
+  instance_class       = "db.serverless"
+  engine               = aws_rds_cluster.aurora[0].engine
+  engine_version       = aws_rds_cluster.aurora[0].engine_version
+  db_subnet_group_name = aws_db_subnet_group.aurora[0].name
+}
+
+# T26.1 — reader
+resource "aws_rds_cluster_instance" "reader" {
+  count                = var.enable_runtime ? 1 : 0
+  identifier           = "${local.name}-aurora-reader"
   cluster_identifier   = aws_rds_cluster.aurora[0].id
   instance_class       = "db.serverless"
   engine               = aws_rds_cluster.aurora[0].engine

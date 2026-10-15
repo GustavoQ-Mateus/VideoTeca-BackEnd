@@ -1,0 +1,68 @@
+{
+  "resource": {
+    "aws_cloudwatch_log_group": {
+      "workers": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "/ecs/${var.name}-workers",
+        "retention_in_days": 30
+      }
+    },
+    "aws_cloudwatch_log_metric_filter": {
+      "worker_errors": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "${var.name}-worker-errors",
+        "log_group_name": "${aws_cloudwatch_log_group.workers[0].name}",
+        "pattern": "{ $.level = \"ERROR\" }",
+        "metric_transformation": {
+          "name": "WorkerErrors",
+          "namespace": "Videoteca/Workers",
+          "value": "1",
+          "default_value": 0
+        }
+      }
+    },
+    "aws_cloudwatch_metric_alarm": {
+      "worker_errors": {
+        "count": "${var.enabled ? 1 : 0}",
+        "alarm_name": "${var.name}-worker-errors",
+        "comparison_operator": "GreaterThanThreshold",
+        "evaluation_periods": 1,
+        "metric_name": "WorkerErrors",
+        "namespace": "Videoteca/Workers",
+        "period": 60,
+        "statistic": "Sum",
+        "threshold": 5,
+        "treat_missing_data": "notBreaching",
+        "alarm_actions": [
+          "${aws_sns_topic.failures[0].arn}"
+        ]
+      },
+      "sync_dlq": {
+        "count": "${var.enabled ? 1 : 0}",
+        "alarm_name": "${var.name}-sync-dlq",
+        "comparison_operator": "GreaterThanThreshold",
+        "evaluation_periods": 1,
+        "metric_name": "ApproximateNumberOfMessagesVisible",
+        "namespace": "AWS/SQS",
+        "dimensions": {
+          "QueueName": "${aws_sqs_queue.sync_dlq[0].name}"
+        },
+        "period": 60,
+        "statistic": "Maximum",
+        "threshold": 0,
+        "treat_missing_data": "notBreaching",
+        "alarm_actions": [
+          "${aws_sns_topic.failures[0].arn}"
+        ]
+      }
+    }
+  },
+  "output": {
+    "worker_cluster": {
+      "value": "${try(aws_ecs_cluster.workers[0].name,null)}"
+    },
+    "worker_service": {
+      "value": "${try(aws_ecs_service.worker[0].name,null)}"
+    }
+  }
+}

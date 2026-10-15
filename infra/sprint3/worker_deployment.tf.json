@@ -1,0 +1,70 @@
+{
+  "resource": {
+    "aws_iam_role": {
+      "worker": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name_prefix": "${var.name}-worker-",
+        "assume_role_policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": {\"Service\": \"ecs-tasks.amazonaws.com\"}, \"Action\": \"sts:AssumeRole\"}]}"
+      }
+    },
+    "aws_ecs_task_definition": {
+      "worker": {
+        "count": "${var.enabled ? 1 : 0}",
+        "family": "${var.name}-sync",
+        "requires_compatibilities": [
+          "EC2"
+        ],
+        "network_mode": "awsvpc",
+        "cpu": "${tostring(var.worker_cpu)}",
+        "memory": "${tostring(var.worker_memory)}",
+        "execution_role_arn": "${aws_iam_role.execution[0].arn}",
+        "task_role_arn": "${aws_iam_role.worker[0].arn}",
+        "container_definitions": "${jsonencode([{name=\"sync\",image=var.worker_image,essential=true,cpu=var.worker_cpu,memory=var.worker_memory,command=var.worker_command,readonlyRootFilesystem=true,environment=[{name=\"SYNC_QUEUE_URL\",value=aws_sqs_queue.sync[0].url},{name=\"SYNC_INTERVAL_SECONDS\",value=tostring(var.sync_interval_seconds)}],secrets=[{name=\"DATABASE_URL\",valueFrom=var.database_secret_arn}],logConfiguration={logDriver=\"awslogs\",options={\"awslogs-group\"=aws_cloudwatch_log_group.workers[0].name,\"awslogs-region\"=var.region,\"awslogs-stream-prefix\"=\"sync\"}}}])}"
+      }
+    },
+    "aws_ecs_service": {
+      "worker": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "${var.name}-sync",
+        "cluster": "${aws_ecs_cluster.workers[0].id}",
+        "task_definition": "${aws_ecs_task_definition.worker[0].arn}",
+        "desired_count": "${var.worker_desired_count}",
+        "capacity_provider_strategy": {
+          "capacity_provider": "${aws_ecs_capacity_provider.workers[0].name}",
+          "weight": 1
+        },
+        "network_configuration": {
+          "subnets": "${var.private_subnet_ids}",
+          "security_groups": [
+            "${aws_security_group.processes[0].id}"
+          ],
+          "assign_public_ip": false
+        },
+        "deployment_minimum_healthy_percent": 100,
+        "deployment_maximum_percent": 200,
+        "deployment_circuit_breaker": {
+          "enable": true,
+          "rollback": true
+        },
+        "alarms": {
+          "alarm_names": [
+            "${aws_cloudwatch_metric_alarm.worker_errors[0].alarm_name}"
+          ],
+          "enable": true,
+          "rollback": true
+        },
+        "depends_on": [
+          "aws_ecs_cluster_capacity_providers.workers",
+          "aws_iam_role_policy.worker_queue",
+          "aws_iam_role_policy.execution_secret",
+          "aws_iam_role_policy_attachment.execution"
+        ],
+        "lifecycle": {
+          "ignore_changes": [
+            "desired_count"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "data": {
+    "aws_ssm_parameter": {
+      "ecs_ami": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id"
+      }
+    }
+  },
+  "resource": {
+    "aws_ecs_cluster": {
+      "workers": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "${var.name}-workers",
+        "setting": {
+          "name": "containerInsights",
+          "value": "enabled"
+        }
+      }
+    },
+    "aws_iam_role": {
+      "nodes": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name_prefix": "${var.name}-nodes-",
+        "assume_role_policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": {\"Service\": \"ec2.amazonaws.com\"}, \"Action\": \"sts:AssumeRole\"}]}"
+      }
+    },
+    "aws_iam_role_policy_attachment": {
+      "nodes": {
+        "count": "${var.enabled ? 1 : 0}",
+        "role": "${aws_iam_role.nodes[0].name}",
+        "policy_arn": "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+      }
+    },
+    "aws_iam_instance_profile": {
+      "nodes": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name_prefix": "${var.name}-",
+        "role": "${aws_iam_role.nodes[0].name}"
+      }
+    },
+    "aws_launch_template": {
+      "workers": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name_prefix": "${var.name}-",
+        "image_id": "${data.aws_ssm_parameter.ecs_ami[0].value}",
+        "instance_type": "${var.instance_type}",
+        "iam_instance_profile": {
+          "arn": "${aws_iam_instance_profile.nodes[0].arn}"
+        },
+        "vpc_security_group_ids": [
+          "${aws_security_group.processes[0].id}"
+        ],
+        "metadata_options": {
+          "http_tokens": "required",
+          "http_put_response_hop_limit": 1
+        },
+        "block_device_mappings": {
+          "device_name": "/dev/xvda",
+          "ebs": {
+            "volume_size": 30,
+            "volume_type": "gp3",
+            "encrypted": true
+          }
+        },
+        "user_data": "${base64encode(\"#!/bin/bash\\necho ECS_CLUSTER=${aws_ecs_cluster.workers[0].name} >> /etc/ecs/ecs.config\\n\")}"
+      }
+    },
+    "aws_autoscaling_group": {
+      "workers": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name_prefix": "${var.name}-",
+        "min_size": 0,
+        "max_size": "${var.node_max_count}",
+        "desired_capacity": 0,
+        "vpc_zone_identifier": "${var.private_subnet_ids}",
+        "launch_template": {
+          "id": "${aws_launch_template.workers[0].id}",
+          "version": "${tostring(aws_launch_template.workers[0].latest_version)}"
+        },
+        "tag": [
+          {
+            "key": "AmazonECSManaged",
+            "value": "true",
+            "propagate_at_launch": true
+          }
+        ],
+        "instance_refresh": {
+          "strategy": "Rolling",
+          "preferences": {
+            "min_healthy_percentage": 100,
+            "max_healthy_percentage": 200
+          }
+        },
+        "lifecycle": {
+          "ignore_changes": [
+            "desired_capacity"
+          ]
+        }
+      }
+    }
+  }
+}

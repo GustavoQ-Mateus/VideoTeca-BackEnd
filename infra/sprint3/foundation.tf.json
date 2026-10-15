@@ -1,0 +1,285 @@
+{
+  "terraform": {
+    "required_version": ">= 1.9.0",
+    "required_providers": {
+      "aws": {
+        "source": "hashicorp/aws",
+        "version": "~> 5.100.0"
+      }
+    }
+  },
+  "provider": {
+    "aws": {
+      "region": "${var.region}",
+      "default_tags": {
+        "tags": {
+          "Project": "Videoteca",
+          "Scope": "sprint-3"
+        }
+      }
+    }
+  },
+  "variable": {
+    "enabled": {
+      "type": "bool",
+      "default": false,
+      "description": "Provisionamento opt-in. Esta entrega n\u00e3o executa apply."
+    },
+    "region": {
+      "type": "string",
+      "default": "us-east-1"
+    },
+    "name": {
+      "type": "string",
+      "default": "videoteca-dev-processes"
+    },
+    "vpc_id": {
+      "type": "string",
+      "description": "VPC da funda\u00e7\u00e3o T25"
+    },
+    "vpc_cidr": {
+      "type": "string"
+    },
+    "private_subnet_ids": {
+      "type": "list(string)",
+      "description": "Subnets privadas com NAT ou endpoints para ECR, S3, Logs e Secrets Manager",
+      "validation": {
+        "condition": "${length(var.private_subnet_ids) > 0}",
+        "error_message": "A lista n\u00e3o pode estar vazia."
+      }
+    },
+    "database_secret_arn": {
+      "type": "string"
+    },
+    "reports_image": {
+      "type": "string",
+      "description": "Imagem de relat\u00f3rios versionada por digest (implementa\u00e7\u00e3o do job fora do escopo)",
+      "validation": {
+        "condition": "${can(regex(\"@sha256:[a-f0-9]{64}$\", var.reports_image))}",
+        "error_message": "Use uma imagem imut\u00e1vel por digest SHA-256."
+      }
+    },
+    "email_image": {
+      "type": "string",
+      "description": "Imagem de e-mails versionada por digest",
+      "validation": {
+        "condition": "${can(regex(\"@sha256:[a-f0-9]{64}$\", var.email_image))}",
+        "error_message": "Use uma imagem imut\u00e1vel por digest SHA-256."
+      }
+    },
+    "worker_image": {
+      "type": "string",
+      "description": "Imagem do sincronizador versionada por digest",
+      "validation": {
+        "condition": "${can(regex(\"@sha256:[a-f0-9]{64}$\", var.worker_image))}",
+        "error_message": "Use uma imagem imut\u00e1vel por digest SHA-256."
+      }
+    },
+    "reports_command": {
+      "type": "list(string)",
+      "validation": {
+        "condition": "${length(var.reports_command) > 0}",
+        "error_message": "A lista n\u00e3o pode estar vazia."
+      }
+    },
+    "email_command": {
+      "type": "list(string)",
+      "validation": {
+        "condition": "${length(var.email_command) > 0}",
+        "error_message": "A lista n\u00e3o pode estar vazia."
+      }
+    },
+    "worker_command": {
+      "type": "list(string)",
+      "validation": {
+        "condition": "${length(var.worker_command) > 0}",
+        "error_message": "A lista n\u00e3o pode estar vazia."
+      }
+    },
+    "ses_identity_arn": {
+      "type": "string",
+      "description": "ARN da identidade SES verificada para envio"
+    },
+    "max_batch_vcpus": {
+      "type": "number",
+      "default": 4,
+      "validation": {
+        "condition": "${var.max_batch_vcpus > 0 && floor(var.max_batch_vcpus) == var.max_batch_vcpus}",
+        "error_message": "Informe um inteiro positivo."
+      }
+    },
+    "worker_desired_count": {
+      "type": "number",
+      "default": 1,
+      "validation": {
+        "condition": "${var.worker_desired_count >= 0 && floor(var.worker_desired_count) == var.worker_desired_count && var.worker_desired_count <= var.worker_max_count}",
+        "error_message": "Contagem desejada deve estar entre zero e o m\u00e1ximo."
+      }
+    },
+    "worker_max_count": {
+      "type": "number",
+      "default": 4,
+      "validation": {
+        "condition": "${var.worker_max_count > 0 && floor(var.worker_max_count) == var.worker_max_count}",
+        "error_message": "Informe um inteiro positivo."
+      }
+    },
+    "node_max_count": {
+      "type": "number",
+      "default": 3,
+      "validation": {
+        "condition": "${var.node_max_count > 0 && floor(var.node_max_count) == var.node_max_count}",
+        "error_message": "Informe um inteiro positivo."
+      }
+    },
+    "instance_type": {
+      "type": "string",
+      "default": "t3.small"
+    },
+    "worker_cpu": {
+      "type": "number",
+      "default": 256,
+      "validation": {
+        "condition": "${var.worker_cpu > 0 && floor(var.worker_cpu) == var.worker_cpu}",
+        "error_message": "Informe um inteiro positivo."
+      }
+    },
+    "worker_memory": {
+      "type": "number",
+      "default": 512,
+      "validation": {
+        "condition": "${var.worker_memory > 0 && floor(var.worker_memory) == var.worker_memory}",
+        "error_message": "Informe um inteiro positivo."
+      }
+    },
+    "sync_interval_seconds": {
+      "type": "number",
+      "default": 60,
+      "validation": {
+        "condition": "${var.sync_interval_seconds > 0 && floor(var.sync_interval_seconds) == var.sync_interval_seconds}",
+        "error_message": "Informe um inteiro positivo."
+      }
+    },
+    "alarm_email": {
+      "type": "string",
+      "default": "",
+      "description": "Assinatura SNS opcional; requer confirma\u00e7\u00e3o pelo destinat\u00e1rio"
+    }
+  },
+  "data": {
+    "aws_region": {
+      "current": {}
+    }
+  },
+  "resource": {
+    "aws_security_group": {
+      "processes": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name_prefix": "${var.name}-",
+        "vpc_id": "${var.vpc_id}",
+        "description": "Workers sem portas de entrada; HTTPS e Postgres para saida",
+        "egress": [
+          {
+            "from_port": 443,
+            "to_port": 443,
+            "protocol": "tcp",
+            "cidr_blocks": [
+              "0.0.0.0/0"
+            ],
+            "description": "AWS APIs via NAT/endpoints",
+            "ipv6_cidr_blocks": [],
+            "prefix_list_ids": [],
+            "security_groups": [],
+            "self": false
+          },
+          {
+            "from_port": 5432,
+            "to_port": 5432,
+            "protocol": "tcp",
+            "cidr_blocks": [
+              "${var.vpc_cidr}"
+            ],
+            "description": "Banco privado",
+            "ipv6_cidr_blocks": [],
+            "prefix_list_ids": [],
+            "security_groups": [],
+            "self": false
+          }
+        ]
+      }
+    },
+    "aws_iam_role": {
+      "execution": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name_prefix": "${var.name}-exec-",
+        "assume_role_policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": {\"Service\": \"ecs-tasks.amazonaws.com\"}, \"Action\": \"sts:AssumeRole\"}]}"
+      },
+      "batch_service": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name_prefix": "${var.name}-batch-",
+        "assume_role_policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": {\"Service\": \"batch.amazonaws.com\"}, \"Action\": \"sts:AssumeRole\"}]}"
+      }
+    },
+    "aws_iam_role_policy_attachment": {
+      "execution": {
+        "count": "${var.enabled ? 1 : 0}",
+        "role": "${aws_iam_role.execution[0].name}",
+        "policy_arn": "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+      },
+      "batch_service": {
+        "count": "${var.enabled ? 1 : 0}",
+        "role": "${aws_iam_role.batch_service[0].name}",
+        "policy_arn": "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+      }
+    },
+    "aws_iam_role_policy": {
+      "execution_secret": {
+        "count": "${var.enabled ? 1 : 0}",
+        "role": "${aws_iam_role.execution[0].id}",
+        "policy": "${jsonencode({Version=\"2012-10-17\",Statement=[{Effect=\"Allow\",Action=[\"secretsmanager:GetSecretValue\"],Resource=[var.database_secret_arn]}]})}"
+      }
+    },
+    "aws_batch_compute_environment": {
+      "jobs": {
+        "count": "${var.enabled ? 1 : 0}",
+        "compute_environment_name_prefix": "${var.name}-",
+        "type": "MANAGED",
+        "state": "ENABLED",
+        "service_role": "${aws_iam_role.batch_service[0].arn}",
+        "compute_resources": {
+          "type": "FARGATE",
+          "max_vcpus": "${var.max_batch_vcpus}",
+          "subnets": "${var.private_subnet_ids}",
+          "security_group_ids": [
+            "${aws_security_group.processes[0].id}"
+          ]
+        },
+        "depends_on": [
+          "aws_iam_role_policy_attachment.batch_service"
+        ]
+      }
+    },
+    "aws_batch_job_queue": {
+      "jobs": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "${var.name}-jobs",
+        "state": "ENABLED",
+        "priority": 1,
+        "compute_environment_order": [
+          {
+            "order": 1,
+            "compute_environment": "${aws_batch_compute_environment.jobs[0].arn}"
+          }
+        ]
+      }
+    }
+  },
+  "output": {
+    "job_queue_arn": {
+      "value": "${try(aws_batch_job_queue.jobs[0].arn, null)}"
+    },
+    "process_security_group_id": {
+      "value": "${try(aws_security_group.processes[0].id, null)}"
+    }
+  }
+}

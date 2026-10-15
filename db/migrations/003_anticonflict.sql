@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 DO $$ BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'room_bookings_no_overlap'
+    SELECT 1 FROM pg_constraint WHERE conname = 'room_bookings_no_overlap' AND conrelid = 'room_bookings'::regclass
   ) THEN
     ALTER TABLE room_bookings ADD CONSTRAINT room_bookings_no_overlap
       EXCLUDE USING gist (

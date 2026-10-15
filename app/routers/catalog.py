@@ -17,7 +17,9 @@ async def list_films():
 @router.get("/films/{film_id}")
 async def get_film(film_id: int):
     pool = get_pool()
-    row = await pool.fetchrow("SELECT * FROM films WHERE id = $1", film_id)
+    row = await pool.fetchrow(
+        "SELECT * FROM films WHERE id = $1 AND status <> 'inactive'", film_id
+    )
     if not row:
         raise HTTPException(status_code=404, detail="Filme não encontrado")
     return dict(row)

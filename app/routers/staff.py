@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
@@ -11,12 +12,19 @@ _staff = require_role("funcionario", "admin")
 
 # ── Dashboard stats ──────────────────────────────────────────────────────────
 
+
 @router.get("/stats")
 async def get_stats(user=Depends(_staff)):
     pool = get_pool()
-    total_films = await pool.fetchval("SELECT COUNT(*) FROM films WHERE status != 'inactive'")
-    active_loans = await pool.fetchval("SELECT COUNT(*) FROM loans WHERE status = 'borrowed'")
-    pending_reservations = await pool.fetchval("SELECT COUNT(*) FROM reservations WHERE status = 'waiting'")
+    total_films = await pool.fetchval(
+        "SELECT COUNT(*) FROM films WHERE status != 'inactive'"
+    )
+    active_loans = await pool.fetchval(
+        "SELECT COUNT(*) FROM loans WHERE status = 'borrowed'"
+    )
+    pending_reservations = await pool.fetchval(
+        "SELECT COUNT(*) FROM reservations WHERE status = 'waiting'"
+    )
     late_items = await pool.fetchval(
         "SELECT COUNT(*) FROM loans WHERE status = 'borrowed' AND due_at < NOW()"
     )
@@ -37,6 +45,7 @@ async def get_stats(user=Depends(_staff)):
 
 
 # ── Inventory ────────────────────────────────────────────────────────────────
+
 
 @router.get("/inventory")
 async def list_inventory(user=Depends(_staff)):
@@ -73,9 +82,19 @@ async def create_film(body: FilmCreate, user=Depends(_staff)):
         "INSERT INTO films (title, original_title, year, director, genre, duration, language, "
         "rating, media, cover, synopsis, location, internal_code) "
         "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *",
-        body.title, body.original_title, body.year, body.director, body.genre,
-        body.duration, body.language, body.rating, body.media, body.cover,
-        body.synopsis, body.location, body.internal_code,
+        body.title,
+        body.original_title,
+        body.year,
+        body.director,
+        body.genre,
+        body.duration,
+        body.language,
+        body.rating,
+        body.media,
+        body.cover,
+        body.synopsis,
+        body.location,
+        body.internal_code,
     )
     return dict(row)
 
@@ -87,9 +106,20 @@ async def update_film(film_id: int, body: FilmCreate, user=Depends(_staff)):
         "UPDATE films SET title=$1, original_title=$2, year=$3, director=$4, genre=$5, "
         "duration=$6, language=$7, rating=$8, media=$9, cover=$10, synopsis=$11, "
         "location=$12, internal_code=$13 WHERE id=$14 RETURNING *",
-        body.title, body.original_title, body.year, body.director, body.genre,
-        body.duration, body.language, body.rating, body.media, body.cover,
-        body.synopsis, body.location, body.internal_code, film_id,
+        body.title,
+        body.original_title,
+        body.year,
+        body.director,
+        body.genre,
+        body.duration,
+        body.language,
+        body.rating,
+        body.media,
+        body.cover,
+        body.synopsis,
+        body.location,
+        body.internal_code,
+        film_id,
     )
     if not row:
         raise HTTPException(status_code=404, detail="Filme não encontrado")
@@ -104,6 +134,7 @@ async def delete_film(film_id: int, user=Depends(_staff)):
 
 
 # ── Loans ────────────────────────────────────────────────────────────────────
+
 
 @router.get("/loans")
 async def list_loans(user=Depends(_staff)):
@@ -148,7 +179,9 @@ async def create_loan(body: LoanCreate, user=Depends(_staff)):
             loan = await conn.fetchrow(
                 "INSERT INTO loans (user_id, copy_id, due_at) "
                 "VALUES ($1, $2, NOW() + ($3 || ' days')::interval) RETURNING id, status, borrowed_at, due_at",
-                profile["id"], copy["id"], str(body.days),
+                profile["id"],
+                copy["id"],
+                str(body.days),
             )
             await conn.execute(
                 "UPDATE copies SET status = 'borrowed' WHERE id = $1", copy["id"]
@@ -160,14 +193,16 @@ async def create_loan(body: LoanCreate, user=Depends(_staff)):
 async def return_loan(loan_id: int, user=Depends(_staff)):
     pool = get_pool()
     loan = await pool.fetchrow(
-        "SELECT l.id, l.copy_id FROM loans l WHERE l.id = $1 AND l.status = 'borrowed'", loan_id
+        "SELECT l.id, l.copy_id FROM loans l WHERE l.id = $1 AND l.status = 'borrowed'",
+        loan_id,
     )
     if not loan:
         raise HTTPException(status_code=404, detail="Empréstimo não encontrado")
     async with pool.acquire() as conn:
         async with conn.transaction():
             await conn.execute(
-                "UPDATE loans SET status = 'returned', returned_at = NOW() WHERE id = $1", loan_id
+                "UPDATE loans SET status = 'returned', returned_at = NOW() WHERE id = $1",
+                loan_id,
             )
             await conn.execute(
                 "UPDATE copies SET status = 'available' WHERE id = $1", loan["copy_id"]
@@ -176,6 +211,7 @@ async def return_loan(loan_id: int, user=Depends(_staff)):
 
 
 # ── Reservations ─────────────────────────────────────────────────────────────
+
 
 @router.get("/reservations")
 async def list_reservations(user=Depends(_staff)):
@@ -208,6 +244,7 @@ async def confirm_reservation(reservation_id: int, user=Depends(_staff)):
 
 # ── Users ────────────────────────────────────────────────────────────────────
 
+
 @router.get("/users")
 async def list_users(user=Depends(_staff)):
     pool = get_pool()
@@ -234,6 +271,7 @@ async def get_user_by_registration(registration: str, user=Depends(_staff)):
 
 # ── Rooms ────────────────────────────────────────────────────────────────────
 
+
 @router.get("/rooms")
 async def list_rooms(user=Depends(_staff)):
     pool = get_pool()
@@ -242,6 +280,7 @@ async def list_rooms(user=Depends(_staff)):
 
 
 # ── Events ───────────────────────────────────────────────────────────────────
+
 
 @router.get("/events")
 async def list_events(user=Depends(_staff)):
@@ -271,8 +310,15 @@ async def create_event(body: EventCreate, user=Depends(_staff)):
     row = await pool.fetchrow(
         "INSERT INTO events (title, event_type, film_id, location, starts_at, slots, "
         "description, certificate, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *",
-        body.title, body.event_type, body.film_id, body.location,
-        body.starts_at, body.slots, body.description, body.certificate, body.status,
+        body.title,
+        body.event_type,
+        body.film_id,
+        body.location,
+        body.starts_at,
+        body.slots,
+        body.description,
+        body.certificate,
+        body.status,
     )
     return dict(row)
 
@@ -283,8 +329,16 @@ async def update_event(event_id: int, body: EventCreate, user=Depends(_staff)):
     row = await pool.fetchrow(
         "UPDATE events SET title=$1, event_type=$2, film_id=$3, location=$4, starts_at=$5, "
         "slots=$6, description=$7, certificate=$8, status=$9 WHERE id=$10 RETURNING *",
-        body.title, body.event_type, body.film_id, body.location,
-        body.starts_at, body.slots, body.description, body.certificate, body.status, event_id,
+        body.title,
+        body.event_type,
+        body.film_id,
+        body.location,
+        body.starts_at,
+        body.slots,
+        body.description,
+        body.certificate,
+        body.status,
+        event_id,
     )
     if not row:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
@@ -292,6 +346,7 @@ async def update_event(event_id: int, body: EventCreate, user=Depends(_staff)):
 
 
 # ── Professor requests ────────────────────────────────────────────────────────
+
 
 @router.get("/requests")
 async def list_requests(user=Depends(_staff)):
@@ -303,7 +358,17 @@ async def list_requests(user=Depends(_staff)):
         "JOIN profiles p ON p.id = pr.professor_id "
         "ORDER BY pr.created_at DESC LIMIT 100"
     )
-    return [dict(r) for r in rows]
+    return [
+        dict(r)
+        | {
+            "payload": (
+                json.loads(r["payload"])
+                if isinstance(r["payload"], str)
+                else r["payload"]
+            )
+        }
+        for r in rows
+    ]
 
 
 class RequestUpdate(BaseModel):
@@ -313,11 +378,29 @@ class RequestUpdate(BaseModel):
 
 @router.put("/requests/{request_id}")
 async def update_request(request_id: int, body: RequestUpdate, user=Depends(_staff)):
-    pool = get_pool()
-    row = await pool.fetchrow(
-        "UPDATE professor_requests SET status=$1, staff_notes=$2 WHERE id=$3 RETURNING id",
-        body.status, body.staff_notes, request_id,
-    )
-    if not row:
-        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+    if body.status not in ("analysis", "approved", "refused"):
+        raise HTTPException(422, "Status inválido")
+    async with get_pool().acquire() as conn, conn.transaction():
+        row = await conn.fetchrow(
+            "SELECT * FROM professor_requests WHERE id=$1 FOR UPDATE", request_id
+        )
+        if not row:
+            raise HTTPException(404, "Solicitação não encontrada")
+        if row["booking_id"]:
+            status = {
+                "analysis": "pending",
+                "approved": "confirmed",
+                "refused": "cancelled",
+            }[body.status]
+            await conn.execute(
+                "UPDATE room_bookings SET status=$1 WHERE id=$2",
+                status,
+                row["booking_id"],
+            )
+        await conn.execute(
+            "UPDATE professor_requests SET status=$1,staff_notes=$2 WHERE id=$3",
+            body.status,
+            body.staff_notes,
+            request_id,
+        )
     return {"ok": True}

@@ -1,0 +1,40 @@
+{
+  "resource": {
+    "aws_iam_role": {
+      "email": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name_prefix": "${var.name}-email-",
+        "assume_role_policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": {\"Service\": \"ecs-tasks.amazonaws.com\"}, \"Action\": \"sts:AssumeRole\"}]}"
+      }
+    },
+    "aws_iam_role_policy": {
+      "email": {
+        "count": "${var.enabled ? 1 : 0}",
+        "role": "${aws_iam_role.email[0].id}",
+        "policy": "${jsonencode({Version=\"2012-10-17\",Statement=[{Effect=\"Allow\",Action=[\"ses:SendEmail\",\"ses:SendRawEmail\"],Resource=[var.ses_identity_arn]}]})}"
+      }
+    },
+    "aws_batch_job_definition": {
+      "email": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "${var.name}-email",
+        "type": "container",
+        "platform_capabilities": [
+          "FARGATE"
+        ],
+        "container_properties": "${jsonencode({\"image\": \"${var.email_image}\", \"command\": \"${var.email_command}\", \"executionRoleArn\": \"${aws_iam_role.execution[0].arn}\", \"jobRoleArn\": \"${aws_iam_role.email[0].arn}\", \"resourceRequirements\": [{\"type\": \"VCPU\", \"value\": \"0.25\"}, {\"type\": \"MEMORY\", \"value\": \"512\"}], \"networkConfiguration\": {\"assignPublicIp\": \"DISABLED\"}, \"fargatePlatformConfiguration\": {\"platformVersion\": \"LATEST\"}, \"secrets\": [{\"name\": \"DATABASE_URL\", \"valueFrom\": \"${var.database_secret_arn}\"}], \"environment\": [{\"name\": \"AWS_REGION\", \"value\": \"${var.region}\"}], \"logConfiguration\": {\"logDriver\": \"awslogs\", \"options\": {\"awslogs-group\": \"${aws_cloudwatch_log_group.jobs[0].name}\", \"awslogs-region\": \"${var.region}\", \"awslogs-stream-prefix\": \"email\"}}})}",
+        "retry_strategy": {
+          "attempts": 3
+        },
+        "timeout": {
+          "attempt_duration_seconds": 900
+        }
+      }
+    }
+  },
+  "output": {
+    "email_job_definition_arn": {
+      "value": "${try(aws_batch_job_definition.email[0].arn,null)}"
+    }
+  }
+}

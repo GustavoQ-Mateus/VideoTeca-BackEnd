@@ -47,7 +47,8 @@ async def current_user(
         "FROM profiles p JOIN users u ON u.id = p.id WHERE p.id = $1",
         user_id,
     )
-    if not row:
+    # T22.2: conta anonimizada (exclusão LGPD) invalida tokens já emitidos.
+    if not row or row["email"].endswith("@anon.invalid"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado")
     return dict(row)
 

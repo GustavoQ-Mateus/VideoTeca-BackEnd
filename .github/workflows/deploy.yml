@@ -1,0 +1,239 @@
+# T24.3 — Publicação da versão de produção (runbook: docs/RELEASE.md)
+#
+# Dispara em tag v* (ex.: v1.0.0) ou manualmente. Fluxo:
+#   testes → [aprovação manual do environment "production"] →
+#   build → push no ECR → task definition apontando para a imagem POR DIGEST →
+#   migrations (task one-off com a imagem nova) → update-service →
+#   espera estabilizar (circuit breaker faz rollback se falhar) → smoke test.
+#
+# Credenciais AWS via OIDC (infra/github_oidc.tf): nenhuma chave estática.
+# Configuração no environment "production" do GitHub (Settings → Environments):
+#   - Required reviewers: pelo menos 1 aprovador;
+#   - Variables: AWS_REGION, AWS_ROLE_ARN, ECR_REPOSITORY, ECS_CLUSTER,
+#     ECS_SERVICE, ECS_TASK_FAMILY (output github_deploy_settings do Terraform),
+#     CORS_ORIGINS (URL do front, ex.: https://main.xxxx.amplifyapp.com),
+#     API_BASE_URL (URL pública da API, para o smoke test; opcional).
+name: Deploy produção
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      run_migrations:
+        description: "Aplicar db/migrations antes de trocar a versão"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Testes
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: local-ci-only
+          POSTGRES_DB: videoteca_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:local-ci-only@localhost:5432/videoteca_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q
+
+  release:
+    name: Build, migrations e deploy
+    needs: test
+    runs-on: ubuntu-latest
+    # Aprovação manual acontece aqui; a role AWS só aceita tokens deste environment.
+    environment:
+      name: production
+      url: ${{ vars.API_BASE_URL }}
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 45
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+      ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY }}
+      CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+      RUN_MIGRATIONS: ${{ github.event_name == 'push' || inputs.run_migrations }}
+    steps:
+      - name: Validar configuração do environment
+        run: |
+          missing=0
+          for v in AWS_REGION ECR_REPOSITORY ECS_CLUSTER ECS_SERVICE ECS_TASK_FAMILY CORS_ORIGINS; do
+            if [ -z "${!v}" ]; then echo "::error::Variável $v não definida no environment production"; missing=1; fi
+          done
+          if [ -z "${{ vars.AWS_ROLE_ARN }}" ]; then echo "::error::Variável AWS_ROLE_ARN não definida"; missing=1; fi
+          case "$CORS_ORIGINS" in *'*'*) echo "::error::CORS_ORIGINS não pode conter * em produção"; missing=1;; esac
+          exit $missing
+
+      - uses: actions/checkout@v4
+
+      - name: Credenciais AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-session-name: gh-deploy-${{ github.run_id }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login no ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      # 1) Build + push. Tags são só rótulos; o deploy usa o DIGEST imutável.
+      - name: Build e push da imagem
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.ref_type == 'tag' && github.ref_name || format('sha-{0}', github.sha) }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+
+      # 2) Task definition: parte da revisão ativa (criada pelo Terraform) e
+      #    troca só imagem + variáveis de produção. Segredos continuam vindo
+      #    do Secrets Manager (valueFrom), nunca do workflow.
+      - name: Renderizar e registrar task definition
+        id: taskdef
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}@${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          aws ecs describe-task-definition --task-definition "$ECS_TASK_FAMILY" --query taskDefinition > td-current.json
+          echo "previous_arn=$(jq -r .taskDefinitionArn td-current.json)" >> "$GITHUB_OUTPUT"
+          jq --arg img "$IMAGE" --arg cors "$CORS_ORIGINS" '
+            .containerDefinitions |= map(
+              if .name == "api" then
+                .image = $img
+                | .environment = (
+                    ((.environment // []) | map(select(.name != "CORS_ORIGINS" and .name != "ENVIRONMENT")))
+                    + [{name: "ENVIRONMENT", value: "production"}, {name: "CORS_ORIGINS", value: $cors}]
+                  )
+              else . end)
+            | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities,
+                  .registeredAt, .registeredBy, .deregisteredAt)
+          ' td-current.json > td-new.json
+          arn=$(aws ecs register-task-definition --cli-input-json file://td-new.json --query taskDefinition.taskDefinitionArn --output text)
+          echo "Nova task definition: $arn (imagem $IMAGE)"
+          echo "arn=$arn" >> "$GITHUB_OUTPUT"
+          echo "log_group=$(jq -r '.containerDefinitions[] | select(.name=="api") | .logConfiguration.options["awslogs-group"] // ""' td-new.json)" >> "$GITHUB_OUTPUT"
+          echo "log_prefix=$(jq -r '.containerDefinitions[] | select(.name=="api") | .logConfiguration.options["awslogs-stream-prefix"] // ""' td-new.json)" >> "$GITHUB_OUTPUT"
+
+      # 3) Migrations: task one-off com a imagem NOVA, mesma rede/SG do serviço
+      #    (o Aurora só aceita conexões da SG da API). Aplica db/migrations/*.sql
+      #    em ordem, cada arquivo numa transação; para no primeiro erro e o
+      #    deploy NÃO acontece. As migrations são idempotentes (reaplicáveis).
+      - name: Rodar migrations
+        if: env.RUN_MIGRATIONS == 'true'
+        env:
+          TASK_DEF_ARN: ${{ steps.taskdef.outputs.arn }}
+          LOG_GROUP: ${{ steps.taskdef.outputs.log_group }}
+          LOG_PREFIX: ${{ steps.taskdef.outputs.log_prefix }}
+        run: |
+          set -euo pipefail
+          read -r -d '' CODE <<'PY' || true
+          import asyncio, glob, os, asyncpg
+          async def main():
+              conn = await asyncpg.connect(os.environ["DATABASE_URL"], timeout=90)
+              try:
+                  for path in sorted(glob.glob("db/migrations/*.sql")):
+                      print("aplicando", os.path.basename(path), flush=True)
+                      async with conn.transaction():
+                          await conn.execute(open(path, encoding="utf-8").read())
+              finally:
+                  await conn.close()
+              print("migrations ok", flush=True)
+          asyncio.run(main())
+          PY
+          jq -n --arg code "$CODE" '{containerOverrides: [{name: "api", command: ["python", "-c", $code]}]}' > overrides.json
+          net=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --query 'services[0].networkConfiguration' --output json)
+          task=$(aws ecs run-task --cluster "$ECS_CLUSTER" --launch-type FARGATE \
+            --task-definition "$TASK_DEF_ARN" --network-configuration "$net" \
+            --overrides file://overrides.json --started-by "gh-migrate-${GITHUB_RUN_ID}" \
+            --query 'tasks[0].taskArn' --output text)
+          echo "Task de migração: $task"
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$task"
+          if [ -n "$LOG_GROUP" ]; then
+            aws logs get-log-events --log-group-name "$LOG_GROUP" \
+              --log-stream-name "$LOG_PREFIX/api/${task##*/}" --start-from-head \
+              --query 'events[].message' --output text || echo "(logs indisponíveis)"
+          fi
+          code=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$task" \
+            --query 'tasks[0].containers[?name==`api`].exitCode | [0]' --output text)
+          if [ "$code" != "0" ]; then
+            aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$task" --query 'tasks[0].[stoppedReason,containers[0].reason]' --output text || true
+            echo "::error::Migrations falharam (exit $code). Deploy abortado; versão atual segue no ar."
+            exit 1
+          fi
+
+      # 4) Deploy rolling. O serviço tem deployment circuit breaker com
+      #    rollback (ecs.tf): se as tasks novas não ficarem saudáveis, o ECS
+      #    volta sozinho para a revisão anterior e este passo falha.
+      - name: Atualizar serviço ECS
+        env:
+          TASK_DEF_ARN: ${{ steps.taskdef.outputs.arn }}
+        run: |
+          set -euo pipefail
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" \
+            --task-definition "$TASK_DEF_ARN" \
+            --deployment-configuration "deploymentCircuitBreaker={enable=true,rollback=true},maximumPercent=200,minimumHealthyPercent=100" \
+            --query 'service.deployments[0].id' --output text
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
+          read -r running state < <(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+            --query 'services[0].deployments[?status==`PRIMARY`] | [0].[taskDefinition,rolloutState]' --output text)
+          echo "Primária: $running ($state)"
+          if [ "$running" != "$TASK_DEF_ARN" ] || [ "$state" != "COMPLETED" ]; then
+            echo "::error::Deploy não concluiu (circuit breaker pode ter feito rollback)."
+            exit 1
+          fi
+
+      - name: Smoke test
+        if: env.API_BASE_URL != ''
+        run: |
+          set -euo pipefail
+          base="${API_BASE_URL%/}"
+          curl -fsS --retry 5 --retry-delay 10 --retry-all-errors "$base/health" | tee /dev/stderr | grep -q '"ok"'
+          curl -fsS -o /dev/null -w "catálogo HTTP %{http_code}\n" "$base/api/v1/catalog/films"
+
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "### Deploy ${{ github.ref_name }}"
+            echo "- Imagem: \`${{ steps.build.outputs.digest }}\`"
+            echo "- Task definition nova: \`${{ steps.taskdef.outputs.arn }}\`"
+            echo "- Task definition anterior (rollback): \`${{ steps.taskdef.outputs.previous_arn }}\`"
+            echo "- Migrations: ${{ env.RUN_MIGRATIONS }}"
+          } >> "$GITHUB_STEP_SUMMARY"

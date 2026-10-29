@@ -49,3 +49,25 @@ variable "api_desired_count" {
   type        = number
   default     = 1
 }
+
+# ── T24.3 Publicação ─────────────────────────────────────────────────────
+variable "api_certificate_arn" {
+  description = "ARN do certificado ACM do domínio da API. Vazio = só HTTP (dev); produção exige HTTPS"
+  type        = string
+  default     = ""
+}
+
+variable "api_cors_origins" {
+  description = "Origens permitidas no CORS da API, separadas por vírgula (nunca '*' em produção)"
+  type        = string
+  default     = "http://localhost:3000"
+
+  validation {
+    condition     = !strcontains(var.api_cors_origins, "*")
+    error_message = "Use origens explícitas; '*' é recusado pela API em produção."
+  }
+}
+
+locals {
+  api_https = var.api_certificate_arn != ""
+}

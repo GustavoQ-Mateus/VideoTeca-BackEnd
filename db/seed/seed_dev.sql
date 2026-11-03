@@ -18,15 +18,11 @@ INSERT INTO profiles (id, full_name, role, registration, course, phone) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ── Filmes ─────────────────────────────────────────────────────────
-INSERT INTO films (id, title, original_title, year, director, genre, duration, language, rating, media, status, location, synopsis, country, internal_code) VALUES
-  (1, 'Cidade de Deus', 'Cidade de Deus', 2002, 'Fernando Meirelles', 'Drama',        '130 min', 'Português', '16', 'Blu-ray', 'available', 'Estante A1', 'A vida no crime em uma favela do Rio de Janeiro.', 'Brasil', 'VT-0001'),
-  (2, 'Central do Brasil', 'Central do Brasil', 1998, 'Walter Salles', 'Drama',        '110 min', 'Português', '12', 'DVD',     'available', 'Estante A2', 'Uma mulher ajuda um menino a procurar o pai.', 'Brasil', 'VT-0002'),
-  (3, 'Parasita', 'Gisaengchung', 2019, 'Bong Joon-ho', 'Suspense', '132 min', 'Coreano', '16', 'Blu-ray', 'available', 'Estante B1', 'Uma família pobre se infiltra na casa de uma família rica.', 'Coreia do Sul', 'VT-0003'),
-  (4, 'O Auto da Compadecida', 'O Auto da Compadecida', 2000, 'Guel Arraes', 'Comédia', '104 min', 'Português', '12', 'DVD', 'available', 'Estante A3', 'Aventuras de João Grilo e Chicó no sertão nordestino.', 'Brasil', 'VT-0004'),
-  (5, '2001: Uma Odisseia no Espaço', '2001: A Space Odyssey', 1968, 'Stanley Kubrick', 'Ficção Científica', '149 min', 'Inglês', '10', 'Blu-ray', 'maintenance', 'Estante C1', 'Uma jornada da humanidade rumo ao desconhecido.', 'EUA', 'VT-0005'),
-  (6, 'Bacurau', 'Bacurau', 2019, 'Kleber Mendonça Filho', 'Suspense', '132 min', 'Português', '16', 'Blu-ray', 'available', 'Estante B2', 'Um povoado no sertão enfrenta ameaças misteriosas.', 'Brasil', 'VT-0006')
-ON CONFLICT (id) DO NOTHING;
-SELECT setval(pg_get_serial_sequence('films', 'id'), (SELECT MAX(id) FROM films));
+-- O acervo vem do TMDB: db/seed/seed_00_catalogo_tmdb.sql roda antes deste arquivo
+-- (python -m app.migrate --seed aplica db/seed/seed_*.sql em ordem alfabética).
+
+-- ── Direitos de exibição (T21) — demonstração de autorização vencida (bloqueia publicação) ──
+UPDATE films SET rights_valid_until = (NOW() - INTERVAL '1 day')::date WHERE internal_code = 'VT-0002';
 
 -- ── Cópias físicas ─────────────────────────────────────────────────
 INSERT INTO copies (id, film_id, code, patrimonio, condition, status) VALUES

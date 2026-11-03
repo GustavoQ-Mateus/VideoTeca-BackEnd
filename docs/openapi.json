@@ -604,6 +604,19 @@
         "title": "LoginRequest",
         "type": "object"
       },
+      "PresenceUpdate": {
+        "properties": {
+          "present": {
+            "title": "Present",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "present"
+        ],
+        "title": "PresenceUpdate",
+        "type": "object"
+      },
       "Publication": {
         "properties": {
           "published": {
@@ -1949,6 +1962,116 @@
         ]
       }
     },
+    "/api/v1/staff/events/{event_id}/registrations": {
+      "get": {
+        "operationId": "list_event_registrations_api_v1_staff_events__event_id__registrations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Event Registrations",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/events/{event_id}/registrations/{user_id}": {
+      "put": {
+        "operationId": "update_event_presence_api_v1_staff_events__event_id__registrations__user_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresenceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Event Presence",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
     "/api/v1/staff/films": {
       "get": {
         "operationId": "films_api_v1_staff_films_get",
@@ -2790,6 +2913,63 @@
           }
         ],
         "summary": "Confirm Reservation",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/room-bookings": {
+      "get": {
+        "description": "Ocupações (reservas de professor e sessões publicadas) no intervalo [from, to).",
+        "operationId": "list_room_bookings_api_v1_staff_room_bookings_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Room Bookings",
         "tags": [
           "staff"
         ]

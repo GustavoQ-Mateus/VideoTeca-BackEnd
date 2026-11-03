@@ -28,6 +28,20 @@ INSERT INTO films (id, title, original_title, year, director, genre, duration, l
 ON CONFLICT (id) DO NOTHING;
 SELECT setval(pg_get_serial_sequence('films', 'id'), (SELECT MAX(id) FROM films));
 
+-- ── Direitos de exibição (T21) — dados FICTÍCIOS de desenvolvimento ──
+-- Filme 1 tem evento publicado: precisa de autorização válida + comprovante (trigger da migration 010).
+UPDATE films SET rights_status = 'authorized', rights_holder = 'Distribuidora Exemplo (fictícia)',
+  license_type = 'exibicao_publica', rights_valid_until = (NOW() + INTERVAL '1 year')::date,
+  rights_notes = 'Seed de desenvolvimento'
+WHERE id = 1 AND rights_status = 'pending';
+INSERT INTO film_rights_proofs (film_id, filename, media_type, content, sha256)
+SELECT 1, 'autorizacao-exemplo.pdf', 'application/pdf', c, encode(sha256(c), 'hex')
+FROM (SELECT convert_to('%PDF-1.4 comprovante ficticio de desenvolvimento', 'UTF8') AS c) s
+WHERE NOT EXISTS (SELECT 1 FROM film_rights_proofs WHERE film_id = 1);
+UPDATE films SET rights_status = 'authorized', rights_holder = 'Distribuidora Exemplo (fictícia)',
+  license_type = 'educacional', rights_valid_until = (NOW() - INTERVAL '1 day')::date
+WHERE id = 2 AND rights_status = 'pending';  -- autorização vencida (bloqueia publicação)
+
 -- ── Cópias físicas ─────────────────────────────────────────────────
 INSERT INTO copies (id, film_id, code, patrimonio, condition, status) VALUES
   (1, 1, 'CP-0001', 'PAT-1001', 'good',      'available'),

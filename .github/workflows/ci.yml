@@ -29,7 +29,12 @@ jobs:
           python-version: '3.12'
           cache: pip
       - run: pip install -r requirements-dev.txt
-      - run: python -m pytest -q
+      - name: Unit tests (sem banco)
+        run: python -m pytest -q tests/unit
+      - name: Integration tests + coverage
+        run: python -m pytest -q --cov=app --cov-report=term-missing --cov-fail-under=85
+      - name: OpenAPI versionado em dia
+        run: python scripts/export_openapi.py --check
   terraform:
     runs-on: ubuntu-latest
     steps:
@@ -41,3 +46,7 @@ jobs:
       - run: terraform -chdir=infra/sprint3 fmt -check -recursive
       - run: terraform -chdir=infra/sprint3 validate
       - run: terraform -chdir=infra/sprint3 test
+      - run: terraform -chdir=infra init -backend=false
+      - run: terraform -chdir=infra fmt -check -recursive
+      - run: terraform -chdir=infra validate
+      - run: terraform -chdir=infra test

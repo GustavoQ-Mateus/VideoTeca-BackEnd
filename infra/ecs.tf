@@ -35,12 +35,16 @@ resource "aws_ecs_task_definition" "api" {
   task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([{
-    name      = "api"
-    image     = "${aws_ecr_repository.api.repository_url}:${var.api_image_tag}"
-    essential = true
+    name         = "api"
+    image        = "${aws_ecr_repository.api.repository_url}:${var.api_image_tag}"
+    essential    = true
     portMappings = [{ containerPort = 8000, protocol = "tcp" }]
     environment = [
-      { name = "CORS_ORIGINS", value = "*" }
+      { name = "CORS_ORIGINS", value = var.api_cors_origins },
+      { name = "ENVIRONMENT", value = var.environment == "prod" ? "production" : "development" },
+      { name = "EXPOSE_DOCS", value = var.environment == "prod" ? "false" : "true" },
+      { name = "EMF_ENABLED", value = "1" },
+      { name = "FORWARDED_ALLOW_IPS", value = var.vpc_cidr }
     ]
     secrets = [
       { name = "DATABASE_URL", valueFrom = aws_secretsmanager_secret.database_url.arn },
@@ -91,11 +95,36 @@ resource "aws_lb_target_group" "api" {
   }
 }
 
+# T24.3 — com certificado ACM, HTTP redireciona para HTTPS (front no Amplify é HTTPS:
+# chamar a API por HTTP seria bloqueado como mixed content).
 resource "aws_lb_listener" "http" {
   count             = var.enable_runtime ? 1 : 0
   load_balancer_arn = aws_lb.api[0].arn
   port              = 80
   protocol          = "HTTP"
+
+  default_action {
+    type             = local.api_https ? "redirect" : "forward"
+    target_group_arn = local.api_https ? null : aws_lb_target_group.api[0].arn
+
+    dynamic "redirect" {
+      for_each = local.api_https ? [1] : []
+      content {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+  }
+}
+
+resource "aws_lb_listener" "https" {
+  count             = var.enable_runtime && local.api_https ? 1 : 0
+  load_balancer_arn = aws_lb.api[0].arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = var.api_certificate_arn
 
   default_action {
     type             = "forward"
@@ -130,7 +159,7 @@ resource "aws_ecs_service" "api" {
     rollback = true
   }
 
-  depends_on = [aws_lb_listener.http]
+  depends_on = [aws_lb_listener.http, aws_lb_listener.https]
 }
 
 # ── Autoscaling por CPU (T28.4) ───────────────────────────────────────────

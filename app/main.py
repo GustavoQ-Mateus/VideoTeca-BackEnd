@@ -2,12 +2,33 @@
 
 from contextlib import asynccontextmanager
 
+import asyncpg
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from app.core import hardening, observability, openapi
 from app.core.config import settings
 from app.db import postgres
-from app.routers import auth, catalog, events, professor, staff, student
+from app.routers import (
+    auth,
+    availability,
+    bookings,
+    catalog,
+    equipment,
+    equipment_incidents,
+    equipment_returns,
+    events,
+    film_management,
+    film_rights,
+    privacy,
+    professor,
+    publication,
+    sessions,
+    staff,
+    student,
+)
+from app.session_errors import register_session_errors
 
 
 @asynccontextmanager
@@ -17,25 +38,38 @@ async def lifespan(app: FastAPI):
     await postgres.close_pool()
 
 
-app = FastAPI(title="Videoteca Unifor API", version="0.1.0", lifespan=lifespan)
+_docs = settings.docs_enabled
+app = FastAPI(
+    lifespan=lifespan,
+    docs_url="/docs" if _docs else None,
+    redoc_url="/redoc" if _docs else None,
+    openapi_url="/openapi.json" if _docs else None,
+)
+openapi.configure(app)
 
 _origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()] or [
     "http://localhost:3000"
 ]
 
+# Last added = outermost: observability wraps everything (including rejections and CORS).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+    expose_headers=["X-Request-ID", "Content-Disposition", "Retry-After"],
 )
+hardening.install(app)
+observability.install(app)
 
 
-@app.get("/health")
+@app.get("/health", tags=["health"])
 async def health():
-    pool = postgres.get_pool()
-    await pool.fetchval("SELECT 1")
+    try:
+        await postgres.get_pool().fetchval("SELECT 1")
+    except Exception:
+        return JSONResponse(status_code=503, content={"status": "unavailable"})
     return {"status": "ok"}
 
 
@@ -46,18 +80,19 @@ app.include_router(student.router, prefix="/api/v1/student", tags=["student"])
 app.include_router(professor.router, prefix="/api/v1/professor", tags=["professor"])
 app.include_router(staff.router, prefix="/api/v1/staff", tags=["staff"])
 
-from app.routers import (
-    availability,
-    bookings,
-    equipment,
-    equipment_returns,
-    equipment_incidents,
-    film_management,
-    sessions,
-    publication,
-)
-from fastapi.responses import JSONResponse
-import asyncpg
+for module, tag in (
+    (availability, "rooms"),
+    (bookings, "rooms"),
+    (equipment, "equipment"),
+    (equipment_returns, "equipment"),
+    (equipment_incidents, "equipment"),
+    (film_management, "films"),
+    (film_rights, "rights"),
+    (sessions, "sessions"),
+    (publication, "sessions"),
+    (privacy, "privacy"),
+):
+    app.include_router(module.router, prefix="/api/v1", tags=[tag])
 
 
 @app.exception_handler(asyncpg.ExclusionViolationError)
@@ -79,6 +114,7 @@ async def missing_reference(request, exc):
     )
 
 
+@app.exception_handler(TimeoutError)
 @app.exception_handler(asyncpg.QueryCanceledError)
 async def query_timeout(request, exc):
     return JSONResponse(
@@ -88,19 +124,5 @@ async def query_timeout(request, exc):
         },
     )
 
-
-for module in (
-    availability,
-    bookings,
-    equipment,
-    equipment_returns,
-    equipment_incidents,
-    film_management,
-    sessions,
-    publication,
-):
-    app.include_router(module.router, prefix="/api/v1")
-
-from app.session_errors import register_session_errors
 
 register_session_errors(app)

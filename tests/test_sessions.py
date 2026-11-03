@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, timezone
 
 async def test_session_publication_conflicts_and_visibility(api):
     client, pool, headers = api
+    # T21.2: publicar exige filme com direitos de exibição válidos
+    await pool.execute("UPDATE films SET rights_status='public_domain' WHERE id=1")
     h = headers("funcionario")
     start = datetime.now(timezone.utc) + timedelta(days=3)
     body = {
@@ -56,6 +58,8 @@ async def test_session_publication_conflicts_and_visibility(api):
 
 async def test_session_edit_conflict_and_capacity(api):
     client, pool, headers = api
+    # T21.2: publicar exige filme com direitos de exibição válidos
+    await pool.execute("UPDATE films SET rights_status='public_domain' WHERE id=1")
     h = headers("funcionario")
     start = datetime.now(timezone.utc) + timedelta(days=3)
     body = {

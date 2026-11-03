@@ -1,0 +1,46 @@
+# Exemplo de variáveis para o ambiente de produção (T24.3).
+# Copie para prod.tfvars (NÃO commitar se tiver e-mails reais) e rode:
+#   terraform apply -var-file=prod.tfvars
+# Runbook completo: docs/RELEASE.md
+#
+# Atenção: environment muda o prefixo de TODOS os nomes (videoteca-prod-*).
+# Num state que já tem o ambiente "dev" aplicado isso RECRIA tudo; use um
+# state separado (outro diretório/workspace) para prod.
+
+# ── Conta / região ───────────────────────────────────────────────────────
+region      = "us-east-1"
+aws_profile = "prdal-gustavo" # conta pessoal; nunca o profile default
+environment = "prod"
+
+# ── Runtime pago (Aurora + Fargate + ALB): ~US$25–30/mês ligado ──────────
+enable_runtime    = true
+api_desired_count = 1
+# Tag inicial da task definition criada pelo Terraform. Depois do primeiro
+# deploy pelo GitHub Actions use a tag da versão publicada (ex.: "v1.0.0")
+# para que um novo apply não volte a imagem antiga.
+api_image_tag = "v1.0.0"
+# HTTPS obrigatório em produção (front Amplify é HTTPS). Certificado ACM do
+# domínio da API, na mesma região; vazio = só HTTP.
+api_certificate_arn = "arn:aws:acm:us-east-1:765656213653:certificate/<id>"
+api_cors_origins    = "https://main.<app-id>.amplifyapp.com"
+
+# ── Deploy via GitHub Actions (OIDC, sem chaves) ─────────────────────────
+github_repository  = "GustavoQ-Mateus/VideoTeca-BackEnd"
+github_environment = "production"
+# Se a conta já tiver o provider token.actions.githubusercontent.com:
+# github_oidc_provider_arn = "arn:aws:iam::765656213653:oidc-provider/token.actions.githubusercontent.com"
+
+# ── Alarmes (T31.2) — confirme o e-mail de assinatura do SNS ─────────────
+alarm_email                   = "ops@example.com"
+alarm_5xx_threshold           = 5
+alarm_latency_p95_seconds     = 2
+alarm_ecs_utilization_percent = 85
+alarm_db_cpu_percent          = 80
+alarm_db_connections          = 80
+
+# ── Custos (T31.3) ───────────────────────────────────────────────────────
+budget_limit_usd             = 40
+budget_alert_emails          = ["ops@example.com"]
+budget_filter_by_project_tag = false # true só após ativar a cost allocation tag "projeto"
+enable_cost_anomaly_monitor  = true  # false se a conta já tiver monitor por serviço
+cost_anomaly_threshold_usd   = 5

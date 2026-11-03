@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.db.postgres import get_pool
 from app.routers.sessions import staff
+from app.rights import ensure_publishable
 
 router = APIRouter(prefix="/staff/sessions")
 
@@ -21,6 +22,8 @@ async def publication(session_id: int, body: Publication, user=Depends(staff)):
             raise HTTPException(404, "Sessão não encontrada")
         if body.published and not row["future"]:
             raise HTTPException(422, "Não é possível publicar uma sessão passada")
+        if body.published:
+            await ensure_publishable(conn, row["film_id"], row["ends_at"])
         result = await conn.fetchrow(
             "UPDATE events SET status=$2 WHERE id=$1 RETURNING *",
             session_id,

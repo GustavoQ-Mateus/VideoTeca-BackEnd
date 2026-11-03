@@ -1,0 +1,82 @@
+{
+  "resource": {
+    "aws_cloudwatch_log_group": {
+      "jobs": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "/aws/batch/${var.name}",
+        "retention_in_days": 30
+      },
+      "batch_failures": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "/aws/events/${var.name}-failures",
+        "retention_in_days": 30
+      }
+    },
+    "aws_sns_topic": {
+      "failures": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "${var.name}-failures"
+      }
+    },
+    "aws_sns_topic_subscription": {
+      "email": {
+        "count": "${var.enabled && var.alarm_email != \"\" ? 1 : 0}",
+        "topic_arn": "${aws_sns_topic.failures[0].arn}",
+        "protocol": "email",
+        "endpoint": "${var.alarm_email}"
+      }
+    },
+    "aws_cloudwatch_event_rule": {
+      "failed_jobs": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "${var.name}-failed-jobs",
+        "event_pattern": "${jsonencode({source=[\"aws.batch\"],\"detail-type\"=[\"Batch Job State Change\"],detail={status=[\"FAILED\"],jobQueue=[aws_batch_job_queue.jobs[0].arn]}})}"
+      }
+    },
+    "aws_cloudwatch_event_target": {
+      "failed_jobs": {
+        "count": "${var.enabled ? 1 : 0}",
+        "rule": "${aws_cloudwatch_event_rule.failed_jobs[0].name}",
+        "arn": "${aws_cloudwatch_log_group.batch_failures[0].arn}"
+      }
+    },
+    "aws_cloudwatch_log_resource_policy": {
+      "batch_failures": {
+        "count": "${var.enabled ? 1 : 0}",
+        "policy_name": "${var.name}-events-logs",
+        "policy_document": "${jsonencode({Version=\"2012-10-17\",Statement=[{Effect=\"Allow\",Principal={Service=[\"events.amazonaws.com\",\"delivery.logs.amazonaws.com\"]},Action=[\"logs:CreateLogStream\",\"logs:PutLogEvents\"],Resource=\"${aws_cloudwatch_log_group.batch_failures[0].arn}:*\",Condition={ArnEquals={\"aws:SourceArn\"=aws_cloudwatch_event_rule.failed_jobs[0].arn}}}]})}"
+      }
+    },
+    "aws_cloudwatch_log_metric_filter": {
+      "batch_failures": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "${var.name}-failures",
+        "log_group_name": "${aws_cloudwatch_log_group.batch_failures[0].name}",
+        "pattern": "{ $.detail.status = \"FAILED\" }",
+        "metric_transformation": {
+          "name": "FailedJobs",
+          "namespace": "Videoteca/Batch",
+          "value": "1",
+          "default_value": 0
+        }
+      }
+    },
+    "aws_cloudwatch_metric_alarm": {
+      "batch_failures": {
+        "count": "${var.enabled ? 1 : 0}",
+        "alarm_name": "${var.name}-batch-failed",
+        "comparison_operator": "GreaterThanThreshold",
+        "evaluation_periods": 1,
+        "metric_name": "FailedJobs",
+        "namespace": "Videoteca/Batch",
+        "period": 60,
+        "statistic": "Sum",
+        "threshold": 0,
+        "treat_missing_data": "notBreaching",
+        "alarm_actions": [
+          "${aws_sns_topic.failures[0].arn}"
+        ]
+      }
+    }
+  }
+}

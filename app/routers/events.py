@@ -21,10 +21,11 @@ async def get_event(event_id: int):
     pool = get_pool()
     row = await pool.fetchrow(
         "SELECT e.*, f.title as film_title FROM events e "
-        "LEFT JOIN films f ON f.id = e.film_id WHERE e.id = $1",
+        "LEFT JOIN films f ON f.id = e.film_id WHERE e.id = $1 AND e.status = 'published'",
         event_id,
     )
     if not row:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Evento não encontrado")
     return dict(row)

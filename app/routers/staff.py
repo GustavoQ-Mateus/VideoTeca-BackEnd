@@ -1,7 +1,9 @@
 import json
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional
+from uuid import UUID
 
 from app.core.security import require_role
 from app.db.postgres import get_pool
@@ -142,7 +144,7 @@ async def list_loans(user=Depends(_staff)):
     rows = await pool.fetch(
         "SELECT l.id, l.status, l.borrowed_at, l.due_at, l.returned_at, "
         "f.title as film, f.cover, c.code as copy, "
-        "p.full_name as user_name, p.registration "
+        "p.full_name as user_name, p.registration, p.course "
         "FROM loans l "
         "JOIN copies c ON c.id = l.copy_id "
         "JOIN films f ON f.id = c.film_id "
@@ -279,6 +281,31 @@ async def list_rooms(user=Depends(_staff)):
     return [dict(r) for r in rows]
 
 
+@router.get("/room-bookings")
+async def list_room_bookings(
+    from_: datetime = Query(alias="from"),
+    to: datetime = Query(),
+    user=Depends(_staff),
+):
+    """Ocupações (reservas de professor e sessões publicadas) no intervalo [from, to)."""
+    if to <= from_:
+        raise HTTPException(422, "Intervalo inválido")
+    rows = await get_pool().fetch(
+        "SELECT b.id, b.room_id, r.name AS room_name, b.starts_at, b.ends_at, "
+        "COALESCE(b.title, e.title) AS title, b.status, b.event_id, "
+        "CASE WHEN b.event_id IS NULL THEN 'booking' ELSE 'session' END AS kind, "
+        "p.full_name AS professor_name "
+        "FROM room_bookings b JOIN rooms r ON r.id = b.room_id "
+        "LEFT JOIN events e ON e.id = b.event_id "
+        "LEFT JOIN profiles p ON p.id = b.professor_id "
+        "WHERE b.status IN ('confirmed', 'pending') AND b.starts_at < $2 AND b.ends_at > $1 "
+        "ORDER BY b.starts_at ASC LIMIT 1000",
+        from_,
+        to,
+    )
+    return [dict(r) for r in rows]
+
+
 # ── Events ───────────────────────────────────────────────────────────────────
 
 
@@ -343,6 +370,41 @@ async def update_event(event_id: int, body: EventCreate, user=Depends(_staff)):
     if not row:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
     return dict(row)
+
+
+@router.get("/events/{event_id}/registrations")
+async def list_event_registrations(event_id: int, user=Depends(_staff)):
+    pool = get_pool()
+    if not await pool.fetchval("SELECT 1 FROM events WHERE id = $1", event_id):
+        raise HTTPException(404, "Evento não encontrado")
+    rows = await pool.fetch(
+        "SELECT er.user_id, p.full_name AS name, p.registration AS matricula, "
+        "p.course, COALESCE(er.present, FALSE) AS present "
+        "FROM event_registrations er JOIN profiles p ON p.id = er.user_id "
+        "WHERE er.event_id = $1 ORDER BY p.full_name ASC",
+        event_id,
+    )
+    return [dict(r) | {"user_id": str(r["user_id"])} for r in rows]
+
+
+class PresenceUpdate(BaseModel):
+    present: bool
+
+
+@router.put("/events/{event_id}/registrations/{user_id}")
+async def update_event_presence(
+    event_id: int, user_id: UUID, body: PresenceUpdate, user=Depends(_staff)
+):
+    row = await get_pool().fetchrow(
+        "UPDATE event_registrations SET present = $1 "
+        "WHERE event_id = $2 AND user_id = $3 RETURNING user_id, present",
+        body.present,
+        event_id,
+        user_id,
+    )
+    if not row:
+        raise HTTPException(404, "Inscrição não encontrada")
+    return {"user_id": str(row["user_id"]), "present": row["present"]}
 
 
 # ── Professor requests ────────────────────────────────────────────────────────

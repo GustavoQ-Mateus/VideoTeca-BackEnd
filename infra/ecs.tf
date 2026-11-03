@@ -40,7 +40,7 @@ resource "aws_ecs_task_definition" "api" {
     essential    = true
     portMappings = [{ containerPort = 8000, protocol = "tcp" }]
     environment = [
-      { name = "CORS_ORIGINS", value = var.api_cors_origins },
+      { name = "CORS_ORIGINS", value = local.edge ? "https://${aws_cloudfront_distribution.edge[0].domain_name}" : var.api_cors_origins },
       { name = "ENVIRONMENT", value = var.environment == "prod" ? "production" : "development" },
       { name = "EXPOSE_DOCS", value = var.environment == "prod" ? "false" : "true" },
       { name = "EMF_ENABLED", value = "1" },
@@ -104,8 +104,18 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   default_action {
-    type             = local.api_https ? "redirect" : "forward"
-    target_group_arn = local.api_https ? null : aws_lb_target_group.api[0].arn
+    # Atrás do CloudFront (edge.tf) o padrão é 403: só as regras com o segredo encaminham.
+    type             = local.api_https ? "redirect" : (local.edge ? "fixed-response" : "forward")
+    target_group_arn = local.api_https || local.edge ? null : aws_lb_target_group.api[0].arn
+
+    dynamic "fixed_response" {
+      for_each = local.edge && !local.api_https ? [1] : []
+      content {
+        content_type = "text/plain"
+        message_body = "Acesse pelo endereço HTTPS da aplicação."
+        status_code  = "403"
+      }
+    }
 
     dynamic "redirect" {
       for_each = local.api_https ? [1] : []
@@ -159,7 +169,7 @@ resource "aws_ecs_service" "api" {
     rollback = true
   }
 
-  depends_on = [aws_lb_listener.http, aws_lb_listener.https]
+  depends_on = [aws_lb_listener.http, aws_lb_listener.https, aws_lb_listener_rule.api]
 }
 
 # ── Autoscaling por CPU (T28.4) ───────────────────────────────────────────

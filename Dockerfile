@@ -21,6 +21,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 COPY db/migrations ./db/migrations
+# Seed de demonstração: só roda com `python -m app.migrate --seed` (homologação).
+COPY db/seed ./db/seed
 
 USER 10001:10001
 

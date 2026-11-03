@@ -9,7 +9,8 @@ async def list_events():
     pool = get_pool()
     rows = await pool.fetch(
         "SELECT e.id, e.title, e.event_type, e.location, e.starts_at, e.slots, e.enrolled, "
-        "e.description, e.certificate, e.status, f.title as film_title, f.cover as film_cover "
+        "e.description, e.certificate, e.status, e.ends_at, e.film_id, f.title as film_title, f.cover as film_cover, "
+        "f.backdrop as film_backdrop, f.year as film_year, f.director as film_director, f.duration as film_duration "
         "FROM events e LEFT JOIN films f ON f.id = e.film_id "
         "WHERE e.status = 'published' ORDER BY e.starts_at ASC"
     )

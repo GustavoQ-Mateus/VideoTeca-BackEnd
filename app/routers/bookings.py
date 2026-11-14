@@ -4,9 +4,11 @@ from pydantic import Field, ConfigDict
 from app.core.security import require_role
 from app.db.postgres import get_pool
 from app.scheduling import Period, future_period, lock_room
+from app.routers.turmas import label, resolve_turmas
 
 router = APIRouter()
-professor = require_role("professor")
+# Professores e alunos pedem sala; a equipe aprova em Pedidos.
+professor = require_role("professor", "aluno")
 
 
 class BookingCreate(Period):
@@ -17,6 +19,7 @@ class BookingCreate(Period):
     registration: str = Field(min_length=1, max_length=40)
     student_count: int = Field(ge=1, le=10000)
     notes: str | None = Field(default=None, max_length=2000)
+    turma_ids: list[int] = Field(default_factory=list, max_length=20)
 
 
 @router.post("/reservas", status_code=201)
@@ -26,6 +29,7 @@ async def create_booking(body: BookingCreate, user=Depends(professor)):
         raise HTTPException(422, "A matrícula deve corresponder ao usuário autenticado")
     async with get_pool().acquire() as conn, conn.transaction():
         await conn.execute("SET LOCAL statement_timeout = '50s'")
+        turmas = await resolve_turmas(conn, user, body.turma_ids)
         room = await lock_room(conn, body.room_id, body.student_count)
         booking = await conn.fetchrow(
             """
@@ -42,13 +46,14 @@ async def create_booking(body: BookingCreate, user=Depends(professor)):
             body.student_count,
             body.notes,
         )
-        payload = body.model_dump(mode="json") | {"room_name": room["name"]}
+        payload = body.model_dump(mode="json") | {"room_name": room["name"], "turmas": [label(t) for t in turmas]}
         await conn.execute(
-            """INSERT INTO professor_requests(professor_id,request_type,payload,booking_id)
-                              VALUES($1,'room',$2::jsonb,$3)""",
+            """INSERT INTO professor_requests(professor_id,request_type,payload,booking_id,turma_ids)
+                              VALUES($1,'room',$2::jsonb,$3,$4::bigint[])""",
             user["id"],
             json.dumps(payload),
             booking["id"],
+            [t["id"] for t in turmas],
         )
     return dict(booking)
 

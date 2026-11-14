@@ -15,7 +15,7 @@ async def availability(
     ends_at: datetime,
     capacity: int = Query(1, ge=1, le=10000),
     resources: list[str] = Query(default=[]),
-    user=Depends(require_role("professor", "funcionario", "admin")),
+    user=Depends(require_role("professor", "aluno", "funcionario", "admin")),
 ):
     try:
         Period(starts_at=starts_at, ends_at=ends_at)

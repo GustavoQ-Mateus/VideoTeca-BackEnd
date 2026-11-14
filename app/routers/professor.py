@@ -5,6 +5,7 @@ from typing import Any
 
 from app.core.security import require_role
 from app.db.postgres import get_pool
+from app.routers.turmas import label, resolve_turmas
 
 router = APIRouter()
 _prof = require_role("professor")
@@ -40,6 +41,7 @@ class FilmRequest(BaseModel):
     film_id: int
     date: str
     notes: str | None = None
+    turma_ids: list[int] = []
 
 
 from app.routers.bookings import BookingCreate as RoomRequest, create_booking
@@ -53,9 +55,11 @@ async def request_film(body: FilmRequest, user=Depends(_prof)):
     )
     if not film:
         raise HTTPException(status_code=404, detail="Filme não encontrado")
+    async with pool.acquire() as conn:
+        turmas = await resolve_turmas(conn, user, body.turma_ids)
     row = await pool.fetchrow(
-        "INSERT INTO professor_requests (professor_id, request_type, payload) "
-        "VALUES ($1, 'film', $2) RETURNING id, status, created_at",
+        "INSERT INTO professor_requests (professor_id, request_type, payload, turma_ids) "
+        "VALUES ($1, 'film', $2, $3::bigint[]) RETURNING id, status, created_at",
         user["id"],
         json.dumps(
             {
@@ -63,8 +67,10 @@ async def request_film(body: FilmRequest, user=Depends(_prof)):
                 "film_title": film["title"],
                 "date": body.date,
                 "notes": body.notes,
+                "turmas": [label(t) for t in turmas],
             }
         ),
+        [t["id"] for t in turmas],
     )
     return dict(row)
 

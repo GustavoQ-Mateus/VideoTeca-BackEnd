@@ -51,8 +51,12 @@ async def test_booking_validation_and_access(api):
     client, pool, headers = api
     body = booking()
     assert (await client.post("/api/v1/reservas", json=body)).status_code == 401
+    # Aluno também pede sala (migration 016), mas só em nome dele mesmo.
     assert (
         await client.post("/api/v1/reservas", json=body, headers=headers("aluno"))
+    ).status_code == 422
+    assert (
+        await client.post("/api/v1/reservas", json=body, headers=headers("funcionario"))
     ).status_code == 403
     for changes in [
         {"student_count": 31},

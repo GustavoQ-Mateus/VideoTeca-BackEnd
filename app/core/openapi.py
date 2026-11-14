@@ -30,6 +30,8 @@ TAGS = [
     {"name": "sessions", "description": "Sessões de exibição: agendamento e publicação condicionada aos direitos."},
     {"name": "equipment", "description": "Equipamentos, retiradas, devoluções e ocorrências."},
     {"name": "privacy", "description": "LGPD: consentimento, exportação e exclusão dos dados do titular."},
+    {"name": "turmas", "description": "Turmas do professor, aulas visíveis só para a turma e contato da Videoteca."},
+    {"name": "services", "description": "Regras por filme, pedidos de equipamento, sugestões de título e atendimento (SAC)."},
 ]
 
 

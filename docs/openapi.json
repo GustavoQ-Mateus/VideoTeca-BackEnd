@@ -81,6 +81,14 @@
             "minLength": 3,
             "title": "Title",
             "type": "string"
+          },
+          "turma_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 20,
+            "title": "Turma Ids",
+            "type": "array"
           }
         },
         "required": [
@@ -129,6 +137,24 @@
         "title": "Checkout",
         "type": "object"
       },
+      "CheckoutInput": {
+        "properties": {
+          "copy_code": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Code"
+          }
+        },
+        "title": "CheckoutInput",
+        "type": "object"
+      },
       "Consent": {
         "properties": {
           "policy_version": {
@@ -142,6 +168,190 @@
           "policy_version"
         ],
         "title": "Consent",
+        "type": "object"
+      },
+      "ContactInfo": {
+        "properties": {
+          "contact_email": {
+            "maxLength": 120,
+            "minLength": 3,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Contact Email",
+            "type": "string"
+          },
+          "contact_hours": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Contact Hours",
+            "type": "string"
+          },
+          "contact_location": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Contact Location",
+            "type": "string"
+          },
+          "contact_phones": {
+            "maxLength": 120,
+            "minLength": 3,
+            "title": "Contact Phones",
+            "type": "string"
+          },
+          "notice": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice"
+          }
+        },
+        "required": [
+          "contact_location",
+          "contact_hours",
+          "contact_phones",
+          "contact_email"
+        ],
+        "title": "ContactInfo",
+        "type": "object"
+      },
+      "CopyCreate": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "condition": {
+            "default": "good",
+            "enum": [
+              "excellent",
+              "good",
+              "fair",
+              "damaged"
+            ],
+            "title": "Condition",
+            "type": "string"
+          },
+          "patrimonio": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patrimonio"
+          }
+        },
+        "title": "CopyCreate",
+        "type": "object"
+      },
+      "CopyUpdate": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "enum": [
+                  "excellent",
+                  "good",
+                  "fair",
+                  "damaged"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition"
+          },
+          "patrimonio": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patrimonio"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "available",
+                  "maintenance",
+                  "lost"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "CopyUpdate",
+        "type": "object"
+      },
+      "Decision": {
+        "properties": {
+          "staff_notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Notes"
+          },
+          "status": {
+            "enum": [
+              "analysis",
+              "approved",
+              "refused"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "Decision",
         "type": "object"
       },
       "EquipmentCreate": {
@@ -173,232 +383,53 @@
         "title": "EquipmentCreate",
         "type": "object"
       },
-      "EventCreate": {
+      "EquipmentRequestIn": {
         "properties": {
-          "certificate": {
-            "default": false,
-            "title": "Certificate",
-            "type": "boolean"
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RequestItem"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
           },
-          "description": {
+          "notes": {
             "anyOf": [
               {
+                "maxLength": 1000,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description"
+            "title": "Notes"
           },
-          "event_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Event Type"
-          },
-          "film_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Film Id"
-          },
-          "location": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Location"
-          },
-          "slots": {
-            "default": 0,
-            "title": "Slots",
-            "type": "integer"
-          },
-          "starts_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Starts At"
-          },
-          "status": {
-            "default": "draft",
-            "title": "Status",
+          "pickup_at": {
+            "format": "date-time",
+            "title": "Pickup At",
             "type": "string"
           },
-          "title": {
-            "title": "Title",
+          "purpose": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Purpose",
+            "type": "string"
+          },
+          "return_at": {
+            "format": "date-time",
+            "title": "Return At",
             "type": "string"
           }
         },
         "required": [
-          "title"
+          "items",
+          "pickup_at",
+          "return_at",
+          "purpose"
         ],
-        "title": "EventCreate",
-        "type": "object"
-      },
-      "FilmCreate": {
-        "properties": {
-          "cover": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cover"
-          },
-          "director": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Director"
-          },
-          "duration": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Duration"
-          },
-          "genre": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Genre"
-          },
-          "internal_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Internal Code"
-          },
-          "language": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Language"
-          },
-          "location": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Location"
-          },
-          "media": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Media"
-          },
-          "original_title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Original Title"
-          },
-          "rating": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rating"
-          },
-          "synopsis": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Synopsis"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "year": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Year"
-          }
-        },
-        "required": [
-          "title"
-        ],
-        "title": "FilmCreate",
+        "title": "EquipmentRequestIn",
         "type": "object"
       },
       "FilmInput": {
@@ -526,6 +557,14 @@
               }
             ],
             "title": "Notes"
+          },
+          "turma_ids": {
+            "default": [],
+            "items": {
+              "type": "integer"
+            },
+            "title": "Turma Ids",
+            "type": "array"
           }
         },
         "required": [
@@ -533,6 +572,69 @@
           "date"
         ],
         "title": "FilmRequest",
+        "type": "object"
+      },
+      "FilmRules": {
+        "properties": {
+          "loan_days": {
+            "anyOf": [
+              {
+                "maximum": 60.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loan Days"
+          },
+          "local_only": {
+            "default": false,
+            "title": "Local Only",
+            "type": "boolean"
+          },
+          "max_renewals": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Renewals"
+          },
+          "pickup_days": {
+            "anyOf": [
+              {
+                "maximum": 15.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup Days"
+          },
+          "queue_limit": {
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Queue Limit"
+          }
+        },
+        "title": "FilmRules",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -551,15 +653,27 @@
       "LoanCreate": {
         "properties": {
           "copy_code": {
+            "maxLength": 60,
+            "minLength": 1,
             "title": "Copy Code",
             "type": "string"
           },
           "days": {
-            "default": 7,
-            "title": "Days",
-            "type": "integer"
+            "anyOf": [
+              {
+                "maximum": 60.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days"
           },
           "user_registration": {
+            "maxLength": 40,
+            "minLength": 1,
             "title": "User Registration",
             "type": "string"
           }
@@ -586,22 +700,66 @@
             "type": "string"
           },
           "role": {
-            "enum": [
-              "aluno",
-              "professor",
-              "funcionario",
-              "admin"
+            "anyOf": [
+              {
+                "enum": [
+                  "aluno",
+                  "professor",
+                  "funcionario",
+                  "admin"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Role",
-            "type": "string"
+            "title": "Role"
           }
         },
         "required": [
           "login",
-          "password",
-          "role"
+          "password"
         ],
         "title": "LoginRequest",
+        "type": "object"
+      },
+      "MessageIn": {
+        "properties": {
+          "body": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "MessageIn",
+        "type": "object"
+      },
+      "NotificationPrefs": {
+        "properties": {
+          "events": {
+            "title": "Events",
+            "type": "boolean"
+          },
+          "reminders": {
+            "title": "Reminders",
+            "type": "boolean"
+          },
+          "reservations": {
+            "title": "Reservations",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reservations",
+          "events",
+          "reminders"
+        ],
+        "title": "NotificationPrefs",
         "type": "object"
       },
       "PresenceUpdate": {
@@ -615,6 +773,51 @@
           "present"
         ],
         "title": "PresenceUpdate",
+        "type": "object"
+      },
+      "ProfileUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "course": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Course"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "pattern": "^[0-9()+\\- ]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "title": "ProfileUpdate",
         "type": "object"
       },
       "Publication": {
@@ -706,11 +909,53 @@
         "title": "RegisterRequest",
         "type": "object"
       },
+      "ReplyIn": {
+        "properties": {
+          "body": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "close": {
+            "default": false,
+            "title": "Close",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "ReplyIn",
+        "type": "object"
+      },
+      "RequestItem": {
+        "properties": {
+          "equipment_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Equipment Id",
+            "type": "integer"
+          },
+          "quantity": {
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "equipment_id",
+          "quantity"
+        ],
+        "title": "RequestItem",
+        "type": "object"
+      },
       "RequestUpdate": {
         "properties": {
           "staff_notes": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -720,6 +965,11 @@
             "title": "Staff Notes"
           },
           "status": {
+            "enum": [
+              "analysis",
+              "approved",
+              "refused"
+            ],
             "title": "Status",
             "type": "string"
           }
@@ -772,6 +1022,136 @@
         "title": "ReturnEquipment",
         "type": "object"
       },
+      "ReturnInput": {
+        "properties": {
+          "condition": {
+            "default": "good",
+            "enum": [
+              "good",
+              "damaged"
+            ],
+            "title": "Condition",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "title": "ReturnInput",
+        "type": "object"
+      },
+      "RoomCreate": {
+        "properties": {
+          "capacity": {
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "equipment": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30,
+            "title": "Equipment",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "default": "available",
+            "enum": [
+              "available",
+              "inactive",
+              "maintenance"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "capacity"
+        ],
+        "title": "RoomCreate",
+        "type": "object"
+      },
+      "RoomUpdate": {
+        "properties": {
+          "capacity": {
+            "anyOf": [
+              {
+                "maximum": 10000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "equipment": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 30,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "available",
+                  "inactive",
+                  "maintenance"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "RoomUpdate",
+        "type": "object"
+      },
       "SessionInput": {
         "properties": {
           "description": {
@@ -822,6 +1202,371 @@
           "slots"
         ],
         "title": "SessionInput",
+        "type": "object"
+      },
+      "SettingsInput": {
+        "properties": {
+          "loan_days": {
+            "maximum": 60.0,
+            "minimum": 1.0,
+            "title": "Loan Days",
+            "type": "integer"
+          },
+          "max_items_per_user": {
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Max Items Per User",
+            "type": "integer"
+          },
+          "max_reservations": {
+            "maximum": 20.0,
+            "minimum": 0.0,
+            "title": "Max Reservations",
+            "type": "integer"
+          },
+          "reservation_pickup_days": {
+            "maximum": 15.0,
+            "minimum": 1.0,
+            "title": "Reservation Pickup Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "loan_days",
+          "max_items_per_user",
+          "max_reservations",
+          "reservation_pickup_days"
+        ],
+        "title": "SettingsInput",
+        "type": "object"
+      },
+      "StaffReservationCreate": {
+        "properties": {
+          "film_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Film Id",
+            "type": "integer"
+          },
+          "registration": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Registration",
+            "type": "string"
+          }
+        },
+        "required": [
+          "registration",
+          "film_id"
+        ],
+        "title": "StaffReservationCreate",
+        "type": "object"
+      },
+      "StatusInput": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "active"
+        ],
+        "title": "StatusInput",
+        "type": "object"
+      },
+      "StudentIn": {
+        "properties": {
+          "registration": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Registration",
+            "type": "string"
+          }
+        },
+        "required": [
+          "registration"
+        ],
+        "title": "StudentIn",
+        "type": "object"
+      },
+      "SuggestionDecision": {
+        "properties": {
+          "staff_notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Notes"
+          },
+          "status": {
+            "enum": [
+              "new",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "SuggestionDecision",
+        "type": "object"
+      },
+      "SuggestionIn": {
+        "properties": {
+          "director": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Director"
+          },
+          "project": {
+            "enum": [
+              "bibcine",
+              "vai_de_serie"
+            ],
+            "title": "Project",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1880.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "title",
+          "project",
+          "reason"
+        ],
+        "title": "SuggestionIn",
+        "type": "object"
+      },
+      "TicketIn": {
+        "properties": {
+          "message": {
+            "maxLength": 4000,
+            "minLength": 3,
+            "title": "Message",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "topic": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "message"
+        ],
+        "title": "TicketIn",
+        "type": "object"
+      },
+      "TurmaIn": {
+        "properties": {
+          "code": {
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "discipline": {
+            "maxLength": 160,
+            "minLength": 2,
+            "title": "Discipline",
+            "type": "string"
+          },
+          "professor_registration": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Professor Registration",
+            "type": "string"
+          },
+          "semester": {
+            "default": "2026.2",
+            "maxLength": 10,
+            "minLength": 4,
+            "title": "Semester",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "discipline",
+          "professor_registration"
+        ],
+        "title": "TurmaIn",
+        "type": "object"
+      },
+      "UserCreate": {
+        "properties": {
+          "course": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Course"
+          },
+          "email": {
+            "maxLength": 254,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Full Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "registration": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration"
+          },
+          "role": {
+            "enum": [
+              "aluno",
+              "professor",
+              "funcionario",
+              "admin"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "full_name",
+          "email",
+          "role"
+        ],
+        "title": "UserCreate",
+        "type": "object"
+      },
+      "UserUpdate": {
+        "properties": {
+          "course": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Course"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "registration": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration"
+          }
+        },
+        "title": "UserUpdate",
         "type": "object"
       },
       "ValidationError": {
@@ -885,6 +1630,31 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/aulas/me": {
+      "get": {
+        "description": "Aulas aprovadas das turmas do aluno, a partir de hoje.",
+        "operationId": "my_classes_api_v1_aulas_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Classes",
+        "tags": [
+          "turmas"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "login_api_v1_auth_login_post",
@@ -1016,6 +1786,23 @@
             }
           },
           {
+            "description": "title | recent (ano) | popular (empréstimos)",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "title",
+              "description": "title | recent (ano) | popular (empréstimos)",
+              "enum": [
+                "title",
+                "recent",
+                "popular"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
             "in": "query",
             "name": "limit",
             "required": false,
@@ -1103,6 +1890,281 @@
         "summary": "Get Film",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/api/v1/contact/info": {
+      "get": {
+        "description": "Público: aparece no rodapé do site e em Fale com a Videoteca.",
+        "operationId": "contact_info_api_v1_contact_info_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Contact Info",
+        "tags": [
+          "turmas"
+        ]
+      }
+    },
+    "/api/v1/contact/tickets": {
+      "post": {
+        "operationId": "open_ticket_api_v1_contact_tickets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Open Ticket",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/contact/tickets/me": {
+      "get": {
+        "operationId": "my_tickets_api_v1_contact_tickets_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Tickets",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/contact/tickets/{ticket_id}/messages": {
+      "post": {
+        "operationId": "add_message_api_v1_contact_tickets__ticket_id__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "title": "Ticket Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Message",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/equipment/catalog": {
+      "get": {
+        "operationId": "equipment_catalog_api_v1_equipment_catalog_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Equipment Catalog",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/equipment/requests": {
+      "post": {
+        "operationId": "request_equipment_api_v1_equipment_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EquipmentRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Request Equipment",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/equipment/requests/me": {
+      "get": {
+        "operationId": "my_equipment_requests_api_v1_equipment_requests_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Equipment Requests",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/equipment/requests/{request_id}": {
+      "delete": {
+        "operationId": "cancel_equipment_request_api_v1_equipment_requests__request_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Equipment Request",
+        "tags": [
+          "services"
         ]
       }
     },
@@ -1213,6 +2275,201 @@
         ]
       }
     },
+    "/api/v1/me/notification-prefs": {
+      "get": {
+        "operationId": "get_prefs_api_v1_me_notification_prefs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Prefs",
+        "tags": [
+          "auth"
+        ]
+      },
+      "put": {
+        "operationId": "put_prefs_api_v1_me_notification_prefs_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPrefs"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Prefs",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/me/notifications": {
+      "get": {
+        "operationId": "list_notifications_api_v1_me_notifications_get",
+        "parameters": [
+          {
+            "description": "true = só as não lidas",
+            "in": "query",
+            "name": "unread",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "true = só as não lidas",
+              "title": "Unread",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Notifications",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/me/notifications/unread-count": {
+      "get": {
+        "operationId": "unread_count_api_v1_me_notifications_unread_count_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Unread Count",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/me/notifications/{notif_id}/read": {
+      "put": {
+        "operationId": "mark_read_api_v1_me_notifications__notif_id__read_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notif_id",
+            "required": true,
+            "schema": {
+              "title": "Notif Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Mark Read",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/me/privacy": {
       "get": {
         "operationId": "privacy_api_v1_me_privacy_get",
@@ -1278,6 +2535,72 @@
         "summary": "Consent",
         "tags": [
           "privacy"
+        ]
+      }
+    },
+    "/api/v1/me/profile": {
+      "get": {
+        "operationId": "get_profile_api_v1_me_profile_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Profile",
+        "tags": [
+          "auth"
+        ]
+      },
+      "put": {
+        "operationId": "update_profile_api_v1_me_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Profile",
+        "tags": [
+          "auth"
         ]
       }
     },
@@ -1549,6 +2872,30 @@
         ]
       }
     },
+    "/api/v1/rooms/requests/me": {
+      "get": {
+        "operationId": "my_room_requests_api_v1_rooms_requests_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Room Requests",
+        "tags": [
+          "services"
+        ]
+      }
+    },
     "/api/v1/salas/disponibilidade": {
       "get": {
         "operationId": "availability_api_v1_salas_disponibilidade_get",
@@ -1630,6 +2977,272 @@
         ]
       }
     },
+    "/api/v1/staff/contact/info": {
+      "put": {
+        "operationId": "update_contact_info_api_v1_staff_contact_info_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactInfo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Contact Info",
+        "tags": [
+          "turmas"
+        ]
+      }
+    },
+    "/api/v1/staff/contact/tickets": {
+      "get": {
+        "operationId": "staff_tickets_api_v1_staff_contact_tickets_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "answered",
+                    "closed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 300,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Staff Tickets",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/staff/contact/tickets/{ticket_id}/reply": {
+      "post": {
+        "operationId": "reply_ticket_api_v1_staff_contact_tickets__ticket_id__reply_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "title": "Ticket Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reply Ticket",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/staff/copies/{copy_id}": {
+      "delete": {
+        "operationId": "delete_copy_api_v1_staff_copies__copy_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "copy_id",
+            "required": true,
+            "schema": {
+              "title": "Copy Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Copy",
+        "tags": [
+          "staff"
+        ]
+      },
+      "put": {
+        "operationId": "update_copy_api_v1_staff_copies__copy_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "copy_id",
+            "required": true,
+            "schema": {
+              "title": "Copy Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Copy",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
     "/api/v1/staff/equipment": {
       "get": {
         "operationId": "list_equipment_api_v1_staff_equipment_get",
@@ -1693,6 +3306,119 @@
         "summary": "Create Equipment",
         "tags": [
           "equipment"
+        ]
+      }
+    },
+    "/api/v1/staff/equipment-requests": {
+      "get": {
+        "operationId": "staff_equipment_requests_api_v1_staff_equipment_requests_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "analysis",
+                    "approved",
+                    "refused",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Staff Equipment Requests",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/staff/equipment-requests/{request_id}": {
+      "put": {
+        "operationId": "decide_equipment_request_api_v1_staff_equipment_requests__request_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Decision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Equipment Request",
+        "tags": [
+          "services"
         ]
       }
     },
@@ -1844,6 +3570,31 @@
     "/api/v1/staff/events": {
       "get": {
         "operationId": "list_events_api_v1_staff_events_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -1852,6 +3603,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -1860,103 +3621,6 @@
           }
         ],
         "summary": "List Events",
-        "tags": [
-          "staff"
-        ]
-      },
-      "post": {
-        "operationId": "create_event_api_v1_staff_events_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EventCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Create Event",
-        "tags": [
-          "staff"
-        ]
-      }
-    },
-    "/api/v1/staff/events/{event_id}": {
-      "put": {
-        "operationId": "update_event_api_v1_staff_events__event_id__put",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "event_id",
-            "required": true,
-            "schema": {
-              "title": "Event Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EventCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Update Event",
         "tags": [
           "staff"
         ]
@@ -2236,6 +3900,104 @@
         ]
       }
     },
+    "/api/v1/staff/films/{film_id}/copies": {
+      "get": {
+        "operationId": "list_copies_api_v1_staff_films__film_id__copies_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "film_id",
+            "required": true,
+            "schema": {
+              "title": "Film Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Copies",
+        "tags": [
+          "staff"
+        ]
+      },
+      "post": {
+        "operationId": "create_copy_api_v1_staff_films__film_id__copies_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "film_id",
+            "required": true,
+            "schema": {
+              "title": "Film Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Copy",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
     "/api/v1/staff/films/{film_id}/poster": {
       "post": {
         "operationId": "upload_poster_api_v1_staff_films__film_id__poster_post",
@@ -2495,9 +4257,20 @@
         ]
       }
     },
-    "/api/v1/staff/inventory": {
+    "/api/v1/staff/films/{film_id}/rules": {
       "get": {
-        "operationId": "list_inventory_api_v1_staff_inventory_get",
+        "operationId": "get_rules_api_v1_staff_films__film_id__rules_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "film_id",
+            "required": true,
+            "schema": {
+              "title": "Film Id",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2506,6 +4279,128 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Rules",
+        "tags": [
+          "services"
+        ]
+      },
+      "put": {
+        "operationId": "put_rules_api_v1_staff_films__film_id__rules_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "film_id",
+            "required": true,
+            "schema": {
+              "title": "Film Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FilmRules"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Rules",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/staff/inventory": {
+      "get": {
+        "operationId": "list_inventory_api_v1_staff_inventory_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 1000,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -2517,151 +4412,70 @@
         "tags": [
           "staff"
         ]
-      },
-      "post": {
-        "operationId": "create_film_api_v1_staff_inventory_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FilmCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Create Film",
-        "tags": [
-          "staff"
-        ]
-      }
-    },
-    "/api/v1/staff/inventory/{film_id}": {
-      "delete": {
-        "operationId": "delete_film_api_v1_staff_inventory__film_id__delete",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "film_id",
-            "required": true,
-            "schema": {
-              "title": "Film Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Delete Film",
-        "tags": [
-          "staff"
-        ]
-      },
-      "put": {
-        "operationId": "update_film_api_v1_staff_inventory__film_id__put",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "film_id",
-            "required": true,
-            "schema": {
-              "title": "Film Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FilmCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Update Film",
-        "tags": [
-          "staff"
-        ]
       }
     },
     "/api/v1/staff/loans": {
       "get": {
+        "description": "Empréstimos (mais recentes primeiro). open=true: só os não devolvidos; q busca código do\nexemplar, matrícula, nome ou título. status é derivado: borrowed | late | returned.",
         "operationId": "list_loans_api_v1_staff_loans_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "open",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Open"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2670,6 +4484,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -2683,6 +4507,7 @@
         ]
       },
       "post": {
+        "description": "Prazo = loan_days; recusa acima de max_items_per_user e exemplar separado para outra reserva.",
         "operationId": "create_loan_api_v1_staff_loans_post",
         "requestBody": {
           "content": {
@@ -2695,7 +4520,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {}
@@ -2727,6 +4552,7 @@
     },
     "/api/v1/staff/loans/{loan_id}/return": {
       "post": {
+        "description": "Registra a devolução; dano manda o exemplar para manutenção, senão ele volta e promove a fila.",
         "operationId": "return_loan_api_v1_staff_loans__loan_id__return_post",
         "parameters": [
           {
@@ -2739,6 +4565,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ReturnInput"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -2770,9 +4613,46 @@
         ]
       }
     },
-    "/api/v1/staff/requests": {
+    "/api/v1/staff/reports": {
       "get": {
-        "operationId": "list_requests_api_v1_staff_requests_get",
+        "description": "Agregados do período [from, to] (datas no fuso de Fortaleza; padrão: últimos 30 dias).",
+        "operationId": "reports_api_v1_staff_reports_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2781,6 +4661,96 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reports",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/requests": {
+      "get": {
+        "operationId": "list_requests_api_v1_staff_requests_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "analysis",
+                    "approved",
+                    "refused"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -2851,7 +4821,57 @@
     },
     "/api/v1/staff/reservations": {
       "get": {
+        "description": "Sem status: todas menos as canceladas. active = waiting + ready.",
         "operationId": "list_reservations_api_v1_staff_reservations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "waiting",
+                    "ready",
+                    "active",
+                    "fulfilled",
+                    "cancelled",
+                    "expired"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2860,6 +4880,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -2871,10 +4901,161 @@
         "tags": [
           "staff"
         ]
+      },
+      "post": {
+        "operationId": "create_reservation_api_v1_staff_reservations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffReservationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Reservation",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/reservations/{reservation_id}": {
+      "delete": {
+        "operationId": "cancel_reservation_api_v1_staff_reservations__reservation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reservation_id",
+            "required": true,
+            "schema": {
+              "title": "Reservation Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Reservation",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/reservations/{reservation_id}/checkout": {
+      "post": {
+        "description": "Converte a reserva em empréstimo (exemplar informado ou o primeiro livre) e a marca fulfilled.",
+        "operationId": "checkout_reservation_api_v1_staff_reservations__reservation_id__checkout_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reservation_id",
+            "required": true,
+            "schema": {
+              "title": "Reservation Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/CheckoutInput"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Checkout Reservation",
+        "tags": [
+          "staff"
+        ]
       }
     },
     "/api/v1/staff/reservations/{reservation_id}/confirm": {
       "put": {
+        "description": "waiting -> ready (exemplar separado; prazo de retirada = reservation_pickup_days) e avisa o aluno.",
         "operationId": "confirm_reservation_api_v1_staff_reservations__reservation_id__confirm_put",
         "parameters": [
           {
@@ -2994,6 +5175,103 @@
           }
         ],
         "summary": "List Rooms",
+        "tags": [
+          "staff"
+        ]
+      },
+      "post": {
+        "operationId": "create_room_api_v1_staff_rooms_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoomCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Room",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/rooms/{room_id}": {
+      "put": {
+        "operationId": "update_room_api_v1_staff_rooms__room_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "title": "Room Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoomUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Room",
         "tags": [
           "staff"
         ]
@@ -3175,6 +5453,72 @@
         ]
       }
     },
+    "/api/v1/staff/settings": {
+      "get": {
+        "operationId": "read_settings_api_v1_staff_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Settings",
+        "tags": [
+          "staff"
+        ]
+      },
+      "put": {
+        "operationId": "update_settings_api_v1_staff_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Settings",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
     "/api/v1/staff/stats": {
       "get": {
         "operationId": "get_stats_api_v1_staff_stats_get",
@@ -3199,9 +5543,121 @@
         ]
       }
     },
-    "/api/v1/staff/users": {
+    "/api/v1/staff/suggestions": {
       "get": {
-        "operationId": "list_users_api_v1_staff_users_get",
+        "operationId": "staff_suggestions_api_v1_staff_suggestions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "new",
+                    "approved",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Staff Suggestions",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/staff/suggestions/{suggestion_id}": {
+      "put": {
+        "operationId": "decide_suggestion_api_v1_staff_suggestions__suggestion_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "suggestion_id",
+            "required": true,
+            "schema": {
+              "title": "Suggestion Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestionDecision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Suggestion",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/staff/turmas": {
+      "get": {
+        "operationId": "staff_turmas_api_v1_staff_turmas_get",
         "responses": {
           "200": {
             "content": {
@@ -3217,7 +5673,393 @@
             "HTTPBearer": []
           }
         ],
+        "summary": "Staff Turmas",
+        "tags": [
+          "turmas"
+        ]
+      },
+      "post": {
+        "operationId": "create_turma_api_v1_staff_turmas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TurmaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Turma",
+        "tags": [
+          "turmas"
+        ]
+      }
+    },
+    "/api/v1/staff/turmas/{turma_id}": {
+      "delete": {
+        "operationId": "delete_turma_api_v1_staff_turmas__turma_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "turma_id",
+            "required": true,
+            "schema": {
+              "title": "Turma Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Turma",
+        "tags": [
+          "turmas"
+        ]
+      }
+    },
+    "/api/v1/staff/turmas/{turma_id}/alunos": {
+      "get": {
+        "operationId": "turma_students_api_v1_staff_turmas__turma_id__alunos_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "turma_id",
+            "required": true,
+            "schema": {
+              "title": "Turma Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Turma Students",
+        "tags": [
+          "turmas"
+        ]
+      },
+      "post": {
+        "operationId": "add_student_api_v1_staff_turmas__turma_id__alunos_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "turma_id",
+            "required": true,
+            "schema": {
+              "title": "Turma Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Student",
+        "tags": [
+          "turmas"
+        ]
+      }
+    },
+    "/api/v1/staff/turmas/{turma_id}/alunos/{user_id}": {
+      "delete": {
+        "operationId": "remove_student_api_v1_staff_turmas__turma_id__alunos__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "turma_id",
+            "required": true,
+            "schema": {
+              "title": "Turma Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove Student",
+        "tags": [
+          "turmas"
+        ]
+      }
+    },
+    "/api/v1/staff/users": {
+      "get": {
+        "operationId": "list_users_api_v1_staff_users_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "aluno",
+                    "professor",
+                    "funcionario",
+                    "admin"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Active"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Users",
+        "tags": [
+          "staff"
+        ]
+      },
+      "post": {
+        "description": "Cria a conta com senha temporária aleatória, devolvida só nesta resposta.",
+        "operationId": "create_user_api_v1_staff_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create User",
         "tags": [
           "staff"
         ]
@@ -3268,6 +6110,118 @@
         ]
       }
     },
+    "/api/v1/staff/users/{user_id}": {
+      "put": {
+        "operationId": "update_user_api_v1_staff_users__user_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update User",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/users/{user_id}/status": {
+      "patch": {
+        "operationId": "set_user_status_api_v1_staff_users__user_id__status_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set User Status",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
     "/api/v1/student/events": {
       "get": {
         "operationId": "get_events_api_v1_student_events_get",
@@ -3287,6 +6241,51 @@
           }
         ],
         "summary": "Get Events",
+        "tags": [
+          "student"
+        ]
+      }
+    },
+    "/api/v1/student/events/{event_id}": {
+      "get": {
+        "operationId": "get_event_api_v1_student_events__event_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Event",
         "tags": [
           "student"
         ]
@@ -3404,6 +6403,94 @@
         ]
       }
     },
+    "/api/v1/student/favorites/{film_id}": {
+      "delete": {
+        "operationId": "remove_favorite_api_v1_student_favorites__film_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "film_id",
+            "required": true,
+            "schema": {
+              "title": "Film Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove Favorite",
+        "tags": [
+          "student"
+        ]
+      },
+      "post": {
+        "operationId": "add_favorite_api_v1_student_favorites__film_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "film_id",
+            "required": true,
+            "schema": {
+              "title": "Film Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Favorite",
+        "tags": [
+          "student"
+        ]
+      }
+    },
     "/api/v1/student/loans": {
       "get": {
         "operationId": "get_loans_api_v1_student_loans_get",
@@ -3423,6 +6510,51 @@
           }
         ],
         "summary": "Get Loans",
+        "tags": [
+          "student"
+        ]
+      }
+    },
+    "/api/v1/student/loans/{loan_id}/renew": {
+      "post": {
+        "operationId": "renew_loan_api_v1_student_loans__loan_id__renew_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "loan_id",
+            "required": true,
+            "schema": {
+              "title": "Loan Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Renew Loan",
         "tags": [
           "student"
         ]
@@ -3656,6 +6788,98 @@
         ]
       }
     },
+    "/api/v1/suggestions": {
+      "post": {
+        "operationId": "suggest_api_v1_suggestions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Suggest",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/suggestions/me": {
+      "get": {
+        "operationId": "my_suggestions_api_v1_suggestions_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Suggestions",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/turmas/me": {
+      "get": {
+        "operationId": "my_turmas_api_v1_turmas_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Turmas",
+        "tags": [
+          "turmas"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "health_health_get",
@@ -3728,6 +6952,14 @@
     {
       "description": "LGPD: consentimento, exportação e exclusão dos dados do titular.",
       "name": "privacy"
+    },
+    {
+      "description": "Turmas do professor, aulas visíveis só para a turma e contato da Videoteca.",
+      "name": "turmas"
+    },
+    {
+      "description": "Regras por filme, pedidos de equipamento, sugestões de título e atendimento (SAC).",
+      "name": "services"
     }
   ]
 }

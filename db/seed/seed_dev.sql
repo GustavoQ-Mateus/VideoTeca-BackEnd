@@ -36,9 +36,9 @@ SELECT setval(pg_get_serial_sequence('copies', 'id'), (SELECT MAX(id) FROM copie
 
 -- ── Salas ──────────────────────────────────────────────────────────
 INSERT INTO rooms (id, name, capacity, equipment, status) VALUES
-  (1, 'Sala de Exibição 1', 40, ARRAY['projetor', 'som surround', 'blu-ray'], 'available'),
-  (2, 'Sala de Exibição 2', 25, ARRAY['projetor', 'som estéreo'],             'available'),
-  (3, 'Mini Auditório',     80, ARRAY['projetor', 'som surround', 'palco'],   'available')
+  (1, 'Sala A', 40, ARRAY['projetor', 'som surround', 'blu-ray'], 'available'),
+  (2, 'Sala B', 25, ARRAY['projetor', 'som estéreo'],             'available'),
+  (3, 'Sala C',     80, ARRAY['projetor', 'som surround', 'palco'],   'available')
 ON CONFLICT (id) DO NOTHING;
 SELECT setval(pg_get_serial_sequence('rooms', 'id'), (SELECT MAX(id) FROM rooms));
 
@@ -63,8 +63,8 @@ SELECT setval(pg_get_serial_sequence('loans', 'id'), (SELECT MAX(id) FROM loans)
 
 -- ── Eventos ────────────────────────────────────────────────────────
 INSERT INTO events (id, title, event_type, film_id, location, starts_at, slots, enrolled, description, certificate, status) VALUES
-  (1, 'Cineclube: Cidade de Deus', 'exibicao', 1, 'Sala de Exibição 1', NOW() + INTERVAL '5 days', 40, 12, 'Exibição seguida de debate.', TRUE,  'published'),
-  (2, 'Oficina de Roteiro',        'oficina',  NULL, 'Mini Auditório',   NOW() + INTERVAL '7 days', 30, 0,  'Introdução à escrita de roteiro audiovisual.', TRUE, 'published')
+  (1, 'BibCine: Cidade de Deus', 'exibicao', 1, 'Sala A', NOW() + INTERVAL '5 days', 40, 0, 'Exibição seguida de debate.', TRUE,  'published'),
+  (2, 'Oficina de Roteiro',        'oficina',  NULL, 'Sala C',   NOW() + INTERVAL '7 days', 30, 0,  'Introdução à escrita de roteiro audiovisual.', TRUE, 'published')
 ON CONFLICT (id) DO NOTHING;
 SELECT setval(pg_get_serial_sequence('events', 'id'), (SELECT MAX(id) FROM events));
 
@@ -73,6 +73,32 @@ INSERT INTO event_registrations (event_id, user_id, present) VALUES
 ON CONFLICT (event_id, user_id) DO NOTHING;
 
 -- ── Notificações ───────────────────────────────────────────────────
-INSERT INTO notifications (user_id, title, body, read) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'Reserva pronta para retirada', 'Sua reserva de "Parasita" está disponível na videoteca.', FALSE)
+-- Coerente com a reserva 1 (ready); só insere uma vez.
+INSERT INTO notifications (user_id, title, body, read)
+SELECT '11111111-1111-1111-1111-111111111111', 'Reserva pronta para retirada', 'Sua reserva de "Parasita" está disponível na Videoteca.', FALSE
+WHERE NOT EXISTS (SELECT 1 FROM notifications WHERE user_id = '11111111-1111-1111-1111-111111111111' AND title = 'Reserva pronta para retirada');
+
+-- Equipamentos emprestáveis (pedido pelo aluno/professor, retirada no balcão).
+INSERT INTO equipment (name, category, quantity)
+SELECT v.name, v.category, v.quantity FROM (VALUES
+  ('Notebook 14"',             'Notebooks',      8),
+  ('Notebook para edição',     'Notebooks',      2),
+  ('Projetor multimídia',      'Projetores',     4),
+  ('Projetor portátil',        'Projetores',     1),
+  ('Caixa de som amplificada', 'Som',            3),
+  ('Microfone sem fio',        'Som',            4),
+  ('Leitor de Blu-ray',        'Mídias físicas', 3),
+  ('Leitor de DVD',            'Mídias físicas', 4),
+  ('Cabo HDMI 5 m',            'Acessórios',    10)
+) AS v(name, category, quantity)
+WHERE NOT EXISTS (SELECT 1 FROM equipment e WHERE e.name = v.name);
+
+-- ── Turmas (migration 017): aulas aparecem só para os alunos da turma ──
+INSERT INTO turmas (code, discipline, semester, professor_id)
+SELECT v.code, v.discipline, '2026.2', '22222222-2222-2222-2222-222222222222'
+FROM (VALUES ('T01', 'Teorias da Imagem'), ('T02', 'Teorias da Imagem'), ('T01', 'História do Cinema Brasileiro')) AS v(code, discipline)
+WHERE NOT EXISTS (SELECT 1 FROM turmas t WHERE t.code = v.code AND t.discipline = v.discipline AND t.semester = '2026.2');
+INSERT INTO turma_alunos (turma_id, user_id)
+SELECT id, '11111111-1111-1111-1111-111111111111' FROM turmas
+WHERE semester = '2026.2' AND ((discipline = 'Teorias da Imagem' AND code = 'T02') OR discipline = 'História do Cinema Brasileiro')
 ON CONFLICT DO NOTHING;

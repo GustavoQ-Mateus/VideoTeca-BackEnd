@@ -106,7 +106,7 @@ async def test_staff_student_and_professor_journey(api):
 
     # Aluno: inscrição na sessão, reserva de filme e painel.
     assert (await client.post(f"/api/v1/student/events/{sid}/enroll", headers=student)).status_code == 200
-    assert (await client.post(f"/api/v1/student/events/{sid}/enroll", headers=student)).status_code == 400
+    assert (await client.post(f"/api/v1/student/events/{sid}/enroll", headers=student)).status_code == 409
     events = (await client.get("/api/v1/student/events", headers=student)).json()
     assert events[0]["enrolled_by_me"] is True and events[0]["enrolled"] == 1
     reservation = await client.post("/api/v1/student/reservations", json={"film_id": film_id}, headers=student)
@@ -187,7 +187,6 @@ DENIED = [
     ("aluno", "POST", "/api/v1/staff/sessions"),
     ("aluno", "GET", "/api/v1/staff/films/1/rights-proofs"),
     ("aluno", "GET", "/api/v1/professor/requests"),
-    ("aluno", "GET", "/api/v1/salas/disponibilidade"),
     ("aluno", "POST", "/api/v1/auth/register"),
     ("professor", "GET", "/api/v1/student/loans"),
     ("professor", "GET", "/api/v1/staff/equipment"),

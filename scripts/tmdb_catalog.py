@@ -116,7 +116,7 @@ def main():
     )
     # Bases antigas gravaram um marcador visível na descrição; remove.
     lines.append("UPDATE events SET description = replace(description, ' [demo]', '') WHERE description LIKE '%[demo]%';")
-    # Programação de demonstração: 2 sessões/dia por 7 dias no Mini Auditório (sala 3), relativas à data
+    # Programação de demonstração: 2 sessões/dia por 7 dias na Sala C (sala 3), relativas à data
     # de carga e no fuso de Fortaleza. Só insere uma vez.
     picks = ["VT-0007", "VT-0013", "VT-0025", "VT-0030", "VT-0022", "VT-0008", "VT-0027",
              "VT-0037", "VT-0014", "VT-0034", "VT-0018", "VT-0038", "VT-0026", "VT-0021"]
@@ -124,16 +124,16 @@ def main():
     for i, code in enumerate(picks):
         day, evening = divmod(i, 2)
         hour = "19:00" if evening else "14:00"
-        kind = "Cineclube" if evening and day % 2 == 0 else "Sessão"
-        enrolled = [12, 80, 34, 5, 61, 80, 20, 47, 9, 73, 30, 80, 15, 52][i]
-        values.append(f"({q(code)}, {day}, '{hour}', '{kind}', {enrolled})")
+        kind = "BibCine"
+        values.append(f"({q(code)}, {day}, '{hour}', '{kind}')")
+    # enrolled = 0: o trigger da migration 015 mantém o contador igual às inscrições reais.
     lines.append(
         "INSERT INTO events (title, event_type, film_id, room_id, location, starts_at, ends_at, slots, enrolled, description, certificate, status) "
-        "SELECT v.kind || ': ' || f.title, 'session', f.id, 3, 'Mini Auditório', s.starts_at, "
+        "SELECT v.kind || ': ' || f.title, 'session', f.id, 3, 'Sala C', s.starts_at, "
         "s.starts_at + make_interval(mins => COALESCE(NULLIF(regexp_replace(f.duration, '\\D', '', 'g'), '')::int, 120) + 30), "
-        "80, v.enrolled, CASE WHEN v.kind = 'Cineclube' THEN 'Exibição seguida de debate.' ELSE 'Sessão do acervo.' END, "
+        "80, 0, CASE WHEN v.kind = 'Cineclube' THEN 'Exibição seguida de debate.' ELSE 'Sessão do acervo.' END, "
         "v.kind = 'Cineclube', 'published' "
-        "FROM (VALUES " + ", ".join(values) + ") AS v(code, day, hour, kind, enrolled) "
+        "FROM (VALUES " + ", ".join(values) + ") AS v(code, day, hour, kind) "
         "JOIN films f ON f.internal_code = v.code "
         "CROSS JOIN LATERAL (SELECT ((date_trunc('day', NOW() AT TIME ZONE 'America/Fortaleza') + make_interval(days => v.day + 1) "
         "+ v.hour::time) AT TIME ZONE 'America/Fortaleza') AS starts_at) s "

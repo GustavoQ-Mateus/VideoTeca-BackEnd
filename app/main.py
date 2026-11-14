@@ -21,9 +21,12 @@ from app.routers import (
     events,
     film_management,
     film_rights,
+    me,
     privacy,
     professor,
     publication,
+    services,
+    turmas,
     sessions,
     staff,
     student,
@@ -79,6 +82,7 @@ app.include_router(events.router, prefix="/api/v1/events", tags=["events"])
 app.include_router(student.router, prefix="/api/v1/student", tags=["student"])
 app.include_router(professor.router, prefix="/api/v1/professor", tags=["professor"])
 app.include_router(staff.router, prefix="/api/v1/staff", tags=["staff"])
+app.include_router(me.router, prefix="/api/v1/me", tags=["auth"])
 
 for module, tag in (
     (availability, "rooms"),
@@ -91,6 +95,8 @@ for module, tag in (
     (sessions, "sessions"),
     (publication, "sessions"),
     (privacy, "privacy"),
+    (services, "services"),
+    (turmas, "turmas"),
 ):
     app.include_router(module.router, prefix="/api/v1", tags=[tag])
 

@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,7 +16,8 @@ class LoginRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     login: str = Field(min_length=1, max_length=254)  # matrícula, SIAPE ou email
     password: str = Field(min_length=1, max_length=128)
-    role: Literal["aluno", "professor", "funcionario", "admin"]
+    # Opcional: o perfil vem da própria conta. Se o cliente ainda mandar, precisa bater.
+    role: Optional[Literal["aluno", "professor", "funcionario", "admin"]] = None
 
 
 class RegisterRequest(BaseModel):
@@ -44,15 +45,17 @@ async def login(body: LoginRequest, request: Request):
 
     # Busca por email ou matrícula
     row = await pool.fetchrow(
-        "SELECT u.id, u.password_hash, p.role, p.full_name, p.registration, p.course, p.phone, u.email "
+        "SELECT u.id, u.password_hash, p.active, p.role, p.full_name, p.registration, p.course, p.phone, u.email "
         "FROM users u JOIN profiles p ON p.id = u.id "
         "WHERE u.email = $1 OR p.registration = $1",
         body.login,
     )
     if not _password_matches(body.password, row["password_hash"] if row else None):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
+    if not row["active"]:  # só revelado a quem acertou a senha
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Conta desativada")
 
-    if row["role"] != body.role:
+    if body.role is not None and row["role"] != body.role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Este usuário não tem perfil de {body.role}",

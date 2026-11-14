@@ -9,10 +9,17 @@ async def init_pool():
     dsn = settings.database_url
     is_supabase = "supabase.co" in dsn or "supabase.com" in dsn
     # PgBouncer (Supabase pooler) does not support asyncpg prepared statements.
-    kwargs: dict = {"min_size": 2, "max_size": 10}
+    # Client and server timeouts stay below the 60 s requirement (T22.3); the ALB idle timeout is 60 s.
+    kwargs: dict = {"min_size": 2, "max_size": 10, "command_timeout": 55}
     if is_supabase:
         kwargs["ssl"] = "require"
         kwargs["statement_cache_size"] = 0
+        # Supavisor/PgBouncer may reject startup parameters; keep only the client-side timeout there.
+    else:
+        kwargs["server_settings"] = {
+            "statement_timeout": "55000",
+            "application_name": "videoteca-api",
+        }
     _pool = await asyncpg.create_pool(dsn, **kwargs)
 
 

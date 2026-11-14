@@ -1,0 +1,58 @@
+{
+  "resource": {
+    "aws_ecs_capacity_provider": {
+      "workers": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "${var.name}-ec2",
+        "auto_scaling_group_provider": {
+          "auto_scaling_group_arn": "${aws_autoscaling_group.workers[0].arn}",
+          "managed_termination_protection": "DISABLED",
+          "managed_scaling": {
+            "status": "ENABLED",
+            "target_capacity": 80,
+            "minimum_scaling_step_size": 1,
+            "maximum_scaling_step_size": 2,
+            "instance_warmup_period": 120
+          }
+        }
+      }
+    },
+    "aws_ecs_cluster_capacity_providers": {
+      "workers": {
+        "count": "${var.enabled ? 1 : 0}",
+        "cluster_name": "${aws_ecs_cluster.workers[0].name}",
+        "capacity_providers": [
+          "${aws_ecs_capacity_provider.workers[0].name}"
+        ]
+      }
+    },
+    "aws_appautoscaling_target": {
+      "workers": {
+        "count": "${var.enabled ? 1 : 0}",
+        "min_capacity": "${var.worker_desired_count}",
+        "max_capacity": "${var.worker_max_count}",
+        "resource_id": "service/${aws_ecs_cluster.workers[0].name}/${aws_ecs_service.worker[0].name}",
+        "scalable_dimension": "ecs:service:DesiredCount",
+        "service_namespace": "ecs"
+      }
+    },
+    "aws_appautoscaling_policy": {
+      "workers": {
+        "count": "${var.enabled ? 1 : 0}",
+        "name": "${var.name}-worker-cpu",
+        "policy_type": "TargetTrackingScaling",
+        "resource_id": "${aws_appautoscaling_target.workers[0].resource_id}",
+        "scalable_dimension": "${aws_appautoscaling_target.workers[0].scalable_dimension}",
+        "service_namespace": "ecs",
+        "target_tracking_scaling_policy_configuration": {
+          "target_value": 65,
+          "scale_in_cooldown": 300,
+          "scale_out_cooldown": 60,
+          "predefined_metric_specification": {
+            "predefined_metric_type": "ECSServiceAverageCPUUtilization"
+          }
+        }
+      }
+    }
+  }
+}

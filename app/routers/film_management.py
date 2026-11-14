@@ -1,13 +1,30 @@
 import io
 import warnings
+from datetime import date, datetime, timedelta, timezone
+from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Response
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 from PIL import Image, UnidentifiedImageError
 from app.db.postgres import get_pool
 from app.core.security import require_role
+from app.rights import publication_error
 
 router = APIRouter()
 staff = require_role("funcionario", "admin")
+LOCAL_TZ = timezone(timedelta(hours=-3))  # America/Fortaleza (sem horário de verão)
+RightsStatus = Literal["pending", "authorized", "denied", "public_domain"]
+
+
+def local_today():
+    return datetime.now(LOCAL_TZ).date()
+
+
+def rights_error(status, holder, valid_until, today):
+    if status == "authorized" and not holder:
+        return "Informe o titular dos direitos para marcar o filme como autorizado"
+    if status == "authorized" and valid_until and valid_until < today:
+        return "A validade da autorização já expirou"
+    return None
 
 
 class FilmInput(BaseModel):
@@ -19,6 +36,30 @@ class FilmInput(BaseModel):
     duration: str = Field(default="", max_length=40)
     rating: str = Field(default="Livre", max_length=20)
     synopsis: str = Field(default="", max_length=10000)
+    # Rights are a group: omitted rights_status keeps the stored authorization untouched.
+    rights_status: RightsStatus | None = None
+    rights_holder: str = Field(default="", max_length=200)
+    license_type: str = Field(default="", max_length=80)
+    rights_valid_until: date | None = None
+    rights_notes: str = Field(default="", max_length=2000)
+
+    @model_validator(mode="after")
+    def valid_rights(self):
+        error = rights_error(
+            self.rights_status, self.rights_holder, self.rights_valid_until, local_today()
+        )
+        if error:
+            raise ValueError(error)
+        return self
+
+    def rights(self):
+        return (
+            self.rights_status or "pending",
+            self.rights_holder,
+            self.license_type,
+            self.rights_valid_until,
+            self.rights_notes,
+        )
 
 
 @router.get("/staff/films")
@@ -35,8 +76,9 @@ async def films(user=Depends(staff)):
 async def create(body: FilmInput, user=Depends(staff)):
     return dict(
         await get_pool().fetchrow(
-            """INSERT INTO films(title,year,director,genre,duration,rating,synopsis)
-        VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *""",
+            """INSERT INTO films(title,year,director,genre,duration,rating,synopsis,
+        rights_status,rights_holder,license_type,rights_valid_until,rights_notes)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *""",
             body.title,
             body.year,
             body.director,
@@ -44,27 +86,55 @@ async def create(body: FilmInput, user=Depends(staff)):
             body.duration,
             body.rating,
             body.synopsis,
+            *body.rights(),
         )
     )
 
 
 @router.put("/staff/films/{film_id}")
 async def update(film_id: int, body: FilmInput, user=Depends(staff)):
-    row = await get_pool().fetchrow(
-        """UPDATE films SET title=$2,year=$3,director=$4,genre=$5,duration=$6,rating=$7,synopsis=$8
-        WHERE id=$1 AND status<>'inactive' RETURNING *""",
-        film_id,
-        body.title,
-        body.year,
-        body.director,
-        body.genre,
-        body.duration,
-        body.rating,
-        body.synopsis,
-    )
-    if not row:
-        raise HTTPException(404, "Filme não encontrado")
+    keep = body.rights_status is None
+    async with get_pool().acquire() as conn, conn.transaction():
+        row = await conn.fetchrow(
+            """UPDATE films SET title=$2,year=$3,director=$4,genre=$5,duration=$6,rating=$7,synopsis=$8,
+            rights_status=CASE WHEN $9 THEN rights_status ELSE $10 END,
+            rights_holder=CASE WHEN $9 THEN rights_holder ELSE $11 END,
+            license_type=CASE WHEN $9 THEN license_type ELSE $12 END,
+            rights_valid_until=CASE WHEN $9 THEN rights_valid_until ELSE $13 END,
+            rights_notes=CASE WHEN $9 THEN rights_notes ELSE $14 END
+            WHERE id=$1 AND status<>'inactive' RETURNING *""",
+            film_id,
+            body.title,
+            body.year,
+            body.director,
+            body.genre,
+            body.duration,
+            body.rating,
+            body.synopsis,
+            keep,
+            *body.rights(),
+        )
+        if not row:
+            raise HTTPException(404, "Filme não encontrado")
+        if not keep:
+            await ensure_future_sessions_covered(conn, row)
     return dict(row)
+
+
+async def ensure_future_sessions_covered(conn, film):
+    """Revoking/shortening an authorization must not leave future published sessions uncovered."""
+    pending = await conn.fetchrow(
+        """SELECT MAX((COALESCE(ends_at,starts_at) AT TIME ZONE 'America/Fortaleza')::date) AS ends_on,
+        EXISTS(SELECT 1 FROM film_rights_proofs p WHERE p.film_id=$1) AS has_proof
+        FROM events WHERE film_id=$1 AND status='published' AND COALESCE(ends_at,starts_at)>NOW()""",
+        film["id"],
+    )
+    if pending["ends_on"] and publication_error(
+        film["rights_status"], film["rights_valid_until"], pending["ends_on"], pending["has_proof"]
+    ):
+        raise HTTPException(
+            409, "Despublique as sessões futuras antes de alterar a autorização do filme"
+        )
 
 
 @router.delete("/staff/films/{film_id}")

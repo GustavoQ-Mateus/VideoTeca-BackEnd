@@ -18,15 +18,11 @@ INSERT INTO profiles (id, full_name, role, registration, course, phone) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ── Filmes ─────────────────────────────────────────────────────────
-INSERT INTO films (id, title, original_title, year, director, genre, duration, language, rating, media, status, location, synopsis, country, internal_code) VALUES
-  (1, 'Cidade de Deus', 'Cidade de Deus', 2002, 'Fernando Meirelles', 'Drama',        '130 min', 'Português', '16', 'Blu-ray', 'available', 'Estante A1', 'A vida no crime em uma favela do Rio de Janeiro.', 'Brasil', 'VT-0001'),
-  (2, 'Central do Brasil', 'Central do Brasil', 1998, 'Walter Salles', 'Drama',        '110 min', 'Português', '12', 'DVD',     'available', 'Estante A2', 'Uma mulher ajuda um menino a procurar o pai.', 'Brasil', 'VT-0002'),
-  (3, 'Parasita', 'Gisaengchung', 2019, 'Bong Joon-ho', 'Suspense', '132 min', 'Coreano', '16', 'Blu-ray', 'available', 'Estante B1', 'Uma família pobre se infiltra na casa de uma família rica.', 'Coreia do Sul', 'VT-0003'),
-  (4, 'O Auto da Compadecida', 'O Auto da Compadecida', 2000, 'Guel Arraes', 'Comédia', '104 min', 'Português', '12', 'DVD', 'available', 'Estante A3', 'Aventuras de João Grilo e Chicó no sertão nordestino.', 'Brasil', 'VT-0004'),
-  (5, '2001: Uma Odisseia no Espaço', '2001: A Space Odyssey', 1968, 'Stanley Kubrick', 'Ficção Científica', '149 min', 'Inglês', '10', 'Blu-ray', 'maintenance', 'Estante C1', 'Uma jornada da humanidade rumo ao desconhecido.', 'EUA', 'VT-0005'),
-  (6, 'Bacurau', 'Bacurau', 2019, 'Kleber Mendonça Filho', 'Suspense', '132 min', 'Português', '16', 'Blu-ray', 'available', 'Estante B2', 'Um povoado no sertão enfrenta ameaças misteriosas.', 'Brasil', 'VT-0006')
-ON CONFLICT (id) DO NOTHING;
-SELECT setval(pg_get_serial_sequence('films', 'id'), (SELECT MAX(id) FROM films));
+-- O acervo vem do TMDB: db/seed/seed_00_catalogo_tmdb.sql roda antes deste arquivo
+-- (python -m app.migrate --seed aplica db/seed/seed_*.sql em ordem alfabética).
+
+-- ── Direitos de exibição (T21) — demonstração de autorização vencida (bloqueia publicação) ──
+UPDATE films SET rights_valid_until = (NOW() - INTERVAL '1 day')::date WHERE internal_code = 'VT-0002';
 
 -- ── Cópias físicas ─────────────────────────────────────────────────
 INSERT INTO copies (id, film_id, code, patrimonio, condition, status) VALUES
@@ -40,9 +36,9 @@ SELECT setval(pg_get_serial_sequence('copies', 'id'), (SELECT MAX(id) FROM copie
 
 -- ── Salas ──────────────────────────────────────────────────────────
 INSERT INTO rooms (id, name, capacity, equipment, status) VALUES
-  (1, 'Sala de Exibição 1', 40, ARRAY['projetor', 'som surround', 'blu-ray'], 'available'),
-  (2, 'Sala de Exibição 2', 25, ARRAY['projetor', 'som estéreo'],             'available'),
-  (3, 'Mini Auditório',     80, ARRAY['projetor', 'som surround', 'palco'],   'available')
+  (1, 'Sala A', 40, ARRAY['projetor', 'som surround', 'blu-ray'], 'available'),
+  (2, 'Sala B', 25, ARRAY['projetor', 'som estéreo'],             'available'),
+  (3, 'Sala C',     80, ARRAY['projetor', 'som surround', 'palco'],   'available')
 ON CONFLICT (id) DO NOTHING;
 SELECT setval(pg_get_serial_sequence('rooms', 'id'), (SELECT MAX(id) FROM rooms));
 
@@ -67,8 +63,8 @@ SELECT setval(pg_get_serial_sequence('loans', 'id'), (SELECT MAX(id) FROM loans)
 
 -- ── Eventos ────────────────────────────────────────────────────────
 INSERT INTO events (id, title, event_type, film_id, location, starts_at, slots, enrolled, description, certificate, status) VALUES
-  (1, 'Cineclube: Cidade de Deus', 'exibicao', 1, 'Sala de Exibição 1', NOW() + INTERVAL '5 days', 40, 12, 'Exibição seguida de debate.', TRUE,  'published'),
-  (2, 'Oficina de Roteiro',        'oficina',  NULL, 'Mini Auditório',   NOW() + INTERVAL '7 days', 30, 0,  'Introdução à escrita de roteiro audiovisual.', TRUE, 'published')
+  (1, 'BibCine: Cidade de Deus', 'exibicao', 1, 'Sala A', NOW() + INTERVAL '5 days', 40, 0, 'Exibição seguida de debate.', TRUE,  'published'),
+  (2, 'Oficina de Roteiro',        'oficina',  NULL, 'Sala C',   NOW() + INTERVAL '7 days', 30, 0,  'Introdução à escrita de roteiro audiovisual.', TRUE, 'published')
 ON CONFLICT (id) DO NOTHING;
 SELECT setval(pg_get_serial_sequence('events', 'id'), (SELECT MAX(id) FROM events));
 
@@ -77,6 +73,32 @@ INSERT INTO event_registrations (event_id, user_id, present) VALUES
 ON CONFLICT (event_id, user_id) DO NOTHING;
 
 -- ── Notificações ───────────────────────────────────────────────────
-INSERT INTO notifications (user_id, title, body, read) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'Reserva pronta para retirada', 'Sua reserva de "Parasita" está disponível na videoteca.', FALSE)
+-- Coerente com a reserva 1 (ready); só insere uma vez.
+INSERT INTO notifications (user_id, title, body, read)
+SELECT '11111111-1111-1111-1111-111111111111', 'Reserva pronta para retirada', 'Sua reserva de "Parasita" está disponível na Videoteca.', FALSE
+WHERE NOT EXISTS (SELECT 1 FROM notifications WHERE user_id = '11111111-1111-1111-1111-111111111111' AND title = 'Reserva pronta para retirada');
+
+-- Equipamentos emprestáveis (pedido pelo aluno/professor, retirada no balcão).
+INSERT INTO equipment (name, category, quantity)
+SELECT v.name, v.category, v.quantity FROM (VALUES
+  ('Notebook 14"',             'Notebooks',      8),
+  ('Notebook para edição',     'Notebooks',      2),
+  ('Projetor multimídia',      'Projetores',     4),
+  ('Projetor portátil',        'Projetores',     1),
+  ('Caixa de som amplificada', 'Som',            3),
+  ('Microfone sem fio',        'Som',            4),
+  ('Leitor de Blu-ray',        'Mídias físicas', 3),
+  ('Leitor de DVD',            'Mídias físicas', 4),
+  ('Cabo HDMI 5 m',            'Acessórios',    10)
+) AS v(name, category, quantity)
+WHERE NOT EXISTS (SELECT 1 FROM equipment e WHERE e.name = v.name);
+
+-- ── Turmas (migration 017): aulas aparecem só para os alunos da turma ──
+INSERT INTO turmas (code, discipline, semester, professor_id)
+SELECT v.code, v.discipline, '2026.2', '22222222-2222-2222-2222-222222222222'
+FROM (VALUES ('T01', 'Teorias da Imagem'), ('T02', 'Teorias da Imagem'), ('T01', 'História do Cinema Brasileiro')) AS v(code, discipline)
+WHERE NOT EXISTS (SELECT 1 FROM turmas t WHERE t.code = v.code AND t.discipline = v.discipline AND t.semester = '2026.2');
+INSERT INTO turma_alunos (turma_id, user_id)
+SELECT id, '11111111-1111-1111-1111-111111111111' FROM turmas
+WHERE semester = '2026.2' AND ((discipline = 'Teorias da Imagem' AND code = 'T02') OR discipline = 'História do Cinema Brasileiro')
 ON CONFLICT DO NOTHING;

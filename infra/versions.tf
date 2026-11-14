@@ -20,8 +20,8 @@ provider "aws" {
 
   default_tags {
     tags = {
-      projeto   = "videoteca"
-      ambiente  = var.environment
+      projeto    = "videoteca"
+      ambiente   = var.environment
       gerido_por = "terraform"
     }
   }

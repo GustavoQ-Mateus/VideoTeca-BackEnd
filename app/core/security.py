@@ -43,11 +43,12 @@ async def current_user(
 
     pool = get_pool()
     row = await pool.fetchrow(
-        "SELECT p.id, p.full_name, p.role, p.registration, p.course, p.phone, u.email "
+        "SELECT p.id, p.full_name, p.role, p.registration, p.course, p.phone, u.email, p.active "
         "FROM profiles p JOIN users u ON u.id = p.id WHERE p.id = $1",
         user_id,
     )
-    if not row:
+    # Conta anonimizada (LGPD) ou desativada pelo funcionário invalida tokens já emitidos.
+    if not row or row["email"].endswith("@anon.invalid") or row["active"] is False:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado")
     return dict(row)
 
